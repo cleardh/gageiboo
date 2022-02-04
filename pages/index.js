@@ -1,27 +1,29 @@
 import { useState } from 'react'
-import { Router, useRouter } from 'next/router'
+import { useRouter } from 'next/router'
 import Head from 'next/head'
 import clientPromise from '../lib/mongodb'
 import '@blueprintjs/core/lib/css/blueprint.css';
-import { Intent, Spinner, Icon, IconSize, FormGroup, InputGroup, Classes } from '@blueprintjs/core'
+import { Intent, Spinner, Icon, IconSize, FormGroup, InputGroup, Classes, NumericInput, Label } from '@blueprintjs/core'
+import { DateInput } from '@blueprintjs/datetime'
+import 'react-day-picker/lib/style.css';
 
 export default function Home({ isConnected }) {
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(true);
   const [amount, setAmount] = useState('');
-  const inputAmount = e => {
-    let lastDigit = e.target.value[e.target.value.length - 1];
-    if (typeof lastDigit === 'undefined') return setAmount('$0.00');
-    console.log((e.target.value.match(/\./g) || []).length);
-    if (
-      isNaN(lastDigit) && lastDigit !== 'Backspace' && lastDigit !== 'Enter' && lastDigit !== '.' ||
-      ((e.target.value.match(/\./g) || []).length > 1 && lastDigit === '.') ||
-      ((e.target.value.match(/\./g) || []).length > 0 && e.target.value.split('.')[1].length > 2)
-    ) return;
-    let amt = e.target.value;
-    // Need to format trailing zeroes depending on decimal points
-    setAmount(amt);
-  }
+  // const inputAmount = e => {
+  //   let lastDigit = e.target.value[e.target.value.length - 1];
+  //   if (typeof lastDigit === 'undefined') return setAmount('$0.00');
+  //   console.log((e.target.value.match(/\./g) || []).length);
+  //   if (
+  //     isNaN(lastDigit) && lastDigit !== 'Backspace' && lastDigit !== 'Enter' && lastDigit !== '.' ||
+  //     ((e.target.value.match(/\./g) || []).length > 1 && lastDigit === '.') ||
+  //     ((e.target.value.match(/\./g) || []).length > 0 && e.target.value.split('.')[1].length > 2)
+  //   ) return;
+  //   let amt = e.target.value;
+  //   // Need to format trailing zeroes depending on decimal points
+  //   setAmount(amt);
+  // }
   return (
     <div className='container'>
       <Head>
@@ -39,17 +41,24 @@ export default function Home({ isConnected }) {
             </div>
             <div>
               <FormGroup
-                helperText='Helper text with details...'
-                label='Label A'
+                // helperText='Helper text with details...'
+                // label='New transaction'
                 labelFor='text-input'
-                labelInfo='(required)'
+                // labelInfo='(required)'
               >
-                <input className={`${Classes.INPUT} form-input`} type='text' placeholder='$ Amount' onChange={inputAmount} value={amount} />
-                {/* <InputGroup className='form-input' type='text' placeholder='Placeholder text' onChange={inputAmount} value={amount} />
-                <InputGroup className='form-input' type='text' placeholder='Placeholder text' onChange={inputAmount} value={amount} />
-                <InputGroup className='form-input' type='text' placeholder='Placeholder text' onChange={inputAmount} value={amount} />
-                <InputGroup className='form-input' type='text' placeholder='Placeholder text' onChange={inputAmount} value={amount} />
-                <InputGroup className='form-input' type='text' placeholder='Placeholder text' onChange={inputAmount} value={amount} /> */}
+                {/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}> */}
+                {/* <Icon icon='dollar' style={{ filter: 'invert(1)', position: 'absolute', zIndex: 1 }} /> */}
+                {/* <input className={`${Classes.INPUT} form-input`} type='text' placeholder='$ Amount' onChange={inputAmount} value={amount} leftIcon='dollar' /> */}
+                {/* </div> */}
+                <div className='form-input-group'>
+                  <Label htmlFor='amount'>Amount</Label>
+                  <NumericInput id='amount' inputRef={ref => ref && ref.classList.add('form-input')} leftIcon='dollar' onValueChange={(valueAsNumber, valueAsString) => setAmount(valueAsString)} buttonPosition='none' />
+                </div>
+                <div className='form-input-group'>
+                  <Label htmlFor='date'>Date</Label>
+                  <DateInput id='date' inputProps={{ className: 'form-input' }} formatDate={date => date.toLocaleDateString()} placeholder='MM/DD/YYYY' parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
+                </div>
+                {/* <InputGroup className='form-input' type='text' placeholder='Placeholder text' onChange={inputAmount} value={amount} /> */}
               </FormGroup>
             </div>
           </>
@@ -98,8 +107,12 @@ export default function Home({ isConnected }) {
           margin: 0 15px;
           ${!darkMode && 'filter: invert(1);'}
         }
-        .form-input {
+        .form-input-group {
           margin: 10px 0;
+        }
+        .form-input {
+          width: 200px !important;
+          text-align: right;
         }
       `}</style>
     </div>

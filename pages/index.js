@@ -10,6 +10,7 @@ import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
+import colors from '../utils/colors';
 
 const green = '#188050';
 const dark = '#30404d';
@@ -69,6 +70,26 @@ export default function Home() {
       memo: ''
     })
   }
+  const isValidSheet = (sheetName) => {
+    const sheetNameToLowerCase = sheetName.toLowerCase();
+    if (
+      sheetNameToLowerCase.indexOf('jan') >= 0 ||
+      sheetNameToLowerCase.indexOf('feb') >= 0 ||
+      sheetNameToLowerCase.indexOf('mar') >= 0 ||
+      sheetNameToLowerCase.indexOf('apr') >= 0 ||
+      sheetNameToLowerCase.indexOf('may') >= 0 ||
+      sheetNameToLowerCase.indexOf('jun') >= 0 ||
+      sheetNameToLowerCase.indexOf('jul') >= 0 ||
+      sheetNameToLowerCase.indexOf('aug') >= 0 ||
+      sheetNameToLowerCase.indexOf('sep') >= 0 ||
+      sheetNameToLowerCase.indexOf('oct') >= 0 ||
+      sheetNameToLowerCase.indexOf('nov') >= 0 ||
+      sheetNameToLowerCase.indexOf('dec') >= 0
+    ) {
+      return true;
+    }
+    return false;
+  }
   const excelDateToJSDate = (excelDate) => {
     var date = new Date(Math.round((excelDate - (25567 + 2)) * 86400 * 1000));
     var converted_date = date.toISOString().split('T')[0];
@@ -79,13 +100,19 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = function (e) {
         const data = e.target.result;
+        const rawData = [];
         const workbook = XLSX.read(data, {
           type: 'binary'
         });
-        const XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets['Feb2022']);
-        const parsed_row_object = XL_row_object.map(row => ({ ...row, '날짜': excelDateToJSDate(row['날짜']) }));
-        // const json_object = JSON.stringify(parsed_row_object);
-        setData(parsed_row_object);
+        workbook.SheetNames.forEach(sheetName => {
+          if (isValidSheet(sheetName)) {
+            const XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+            const parsed_row_object = XL_row_object.map(row => ({ ...row, '날짜': excelDateToJSDate(row['날짜']) }));
+            // const json_object = JSON.stringify(parsed_row_object);
+            rawData = [...rawData, ...parsed_row_object];
+          }
+        });
+        setData(rawData);
       };
       reader.readAsBinaryString(e.target.files[0]);
     }
@@ -97,63 +124,98 @@ export default function Home() {
         return Object.assign(hash, { [obj[key]]: (hash[obj[key]] || []).concat(obj) })
       }, {})
   }
+  const parseData = () => {
+    const expensesGroupByMonth = [];
+    const expensesCategories = [];
+    const incomeGroupByMonth = [];
+    const incomeCategories = [];
+    data.forEach(row => {
+      if (row['수입']) {
+        const dataRow = incomeGroupByMonth.find(d => d.date === row['날짜'].substring(0, 7));
+        if (incomeCategories.indexOf(row['카테고리']) < 0) incomeCategories.push(row['카테고리']);
+        if (dataRow) {
+          if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['수입']);
+          return dataRow[row['카테고리']] += parseFloat(row['수입']);
+        }
+        incomeGroupByMonth.push({ date: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['수입']) });
+        return;
+      }
+      const dataRow = expensesGroupByMonth.find(d => d.date === row['날짜'].substring(0, 7));
+      if (expensesCategories.indexOf(row['카테고리']) < 0) expensesCategories.push(row['카테고리']);
+      if (dataRow) {
+        if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
+        return dataRow[row['카테고리']] += parseFloat(row['지출']);
+      }
+      expensesGroupByMonth.push({ date: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
+    });
+    expensesGroupByMonth.forEach(row => {
+      expensesCategories.forEach(category => {
+        if (!row[category]) {
+          row[category] = 0;
+        } else {
+          row[category] = row[category].toFixed(2);
+        }
+      });
+    });
+    return { expensesGroupByMonth, expensesCategories, incomeGroupByMonth, incomeCategories };
+  }
   const renderPage = () => {
     switch (page) {
       case '/':
         return (
-          <FormGroup>
-            <div className='form-input-group'>
-              <Label htmlFor='amount' className='labels'>Amount</Label>
-              <NumericInput id='amount' inputRef={ref => { if (ref) ref.id = 'amountInput'; }} leftIcon='dollar' onValueChange={(valueAsNumber, valueAsString) => updateFormData('amount', valueAsString)} value={formData.amount} buttonPosition='none' />
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='date' className='labels'>Date</Label>
-              <DateInput id='date' onChange={selectedDate => updateFormData('date', selectedDate.toLocaleDateString())} value={new Date(formData.date)} formatDate={date => date.toLocaleDateString()} placeholder='MM/DD/YYYY' parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='type' className='labels'>Type</Label>
-              <div className='space-around'>
-                <Icon icon='minus' size={IconSize.LARGE} />
-                <Switch large checked={formData.type === 'debit'} onChange={setType} />
-                <Icon icon='plus' size={IconSize.LARGE} />
-              </div>
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='location' className='labels'>Location</Label>
-              <HTMLSelect onChange={e => updateFormData('location', e.target.value)} value={formData.location}>
-                <option value=''></option>
-                <option value='sobeys'>Sobeys</option>
-                <option value='costco'>Costco</option>
-                <option value='walmart'>Walmart</option>
-                <option value='canadiantire'>Canadian Tire</option>
-              </HTMLSelect>
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='category' className='labels'>Category</Label>
-              <HTMLSelect onChange={e => updateFormData('category', e.target.value)} value={formData.category}>
-                <option value=''></option>
-                <option value='food'>Food</option>
-                <option value='gas'>Gas</option>
-                <option value='toys'>Toys</option>
-                <option value='misc'>Miscellaneous</option>
-              </HTMLSelect>
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='memo' className='labels'>Memo</Label>
-              <TextArea
-                id='memo'
-                growVertically={true}
-                intent={Intent.PRIMARY}
-                onChange={e => updateFormData('memo', e.target.value)}
-                value={formData.memo}
-              />
-            </div>
-            <hr style={{ width: '100%' }} />
-            <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
-          </FormGroup>
+          <Icon icon='build' size={100} />
+          // <FormGroup>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='amount' className='labels'>Amount</Label>
+          //     <NumericInput id='amount' inputRef={ref => { if (ref) ref.id = 'amountInput'; }} leftIcon='dollar' onValueChange={(valueAsNumber, valueAsString) => updateFormData('amount', valueAsString)} value={formData.amount} buttonPosition='none' />
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='date' className='labels'>Date</Label>
+          //     <DateInput id='date' onChange={selectedDate => updateFormData('date', selectedDate.toLocaleDateString())} value={new Date(formData.date)} formatDate={date => date.toLocaleDateString()} placeholder='MM/DD/YYYY' parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='type' className='labels'>Type</Label>
+          //     <div className='space-around'>
+          //       <Icon icon='minus' size={IconSize.LARGE} />
+          //       <Switch large checked={formData.type === 'debit'} onChange={setType} />
+          //       <Icon icon='plus' size={IconSize.LARGE} />
+          //     </div>
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='location' className='labels'>Location</Label>
+          //     <HTMLSelect onChange={e => updateFormData('location', e.target.value)} value={formData.location}>
+          //       <option value=''></option>
+          //       <option value='sobeys'>Sobeys</option>
+          //       <option value='costco'>Costco</option>
+          //       <option value='walmart'>Walmart</option>
+          //       <option value='canadiantire'>Canadian Tire</option>
+          //     </HTMLSelect>
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='category' className='labels'>Category</Label>
+          //     <HTMLSelect onChange={e => updateFormData('category', e.target.value)} value={formData.category}>
+          //       <option value=''></option>
+          //       <option value='food'>Food</option>
+          //       <option value='gas'>Gas</option>
+          //       <option value='toys'>Toys</option>
+          //       <option value='misc'>Miscellaneous</option>
+          //     </HTMLSelect>
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='memo' className='labels'>Memo</Label>
+          //     <TextArea
+          //       id='memo'
+          //       growVertically={true}
+          //       intent={Intent.PRIMARY}
+          //       onChange={e => updateFormData('memo', e.target.value)}
+          //       value={formData.memo}
+          //     />
+          //   </div>
+          //   <hr style={{ width: '100%' }} />
+          //   <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
+          // </FormGroup>
         );
       case '/chart':
-        const categories = [];
         if (!data || !data.length) {
           return (
             <>
@@ -162,68 +224,58 @@ export default function Home() {
             </>
           );
         }
-        let groupByMonth = [];
-        let groupByMonthCategory = [];
-        data.forEach(row => {
-          const dataRow = groupByMonth.find(d => d.date === row['날짜'].substring(0, 7));
-          if (categories.indexOf(row['카테고리']) < 0) categories.push(row['카테고리']);
-          if (dataRow) {
-            if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
-            return dataRow[row['카테고리']] += parseFloat(row['지출']);
-          }
-          groupByMonth.push({ date: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
-        });
-        // data.forEach(row => {
-        //   const dataRow = groupByMonth.find(d => d.date === row['날짜']);
-        //   if (categories.indexOf(row['카테고리']) < 0) categories.push(row['카테고리']);
-        //   if (dataRow) {
-        //     if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
-        //     return dataRow[row['카테고리']] += parseFloat(row['지출']);
-        //   }
-        //   groupByMonth.push({ date: row['날짜'], [row['카테고리']]: parseFloat(row['지출']) });
-        // });
-        groupByMonth.forEach(row => {
-          categories.forEach(category => {
-            if (!row[category]) {
-              row[category] = 0;
-            } else {
-              row[category] = row[category].toFixed(2);
-            }
-          });
-        });
-        const fillColors = ['#fabed4', '#ffd8b1', '#fffac8', '#aaffc3', '#dcbeff', '#a9a9a9', '#4363d8', '#808000'];
+        const { expensesGroupByMonth, incomeGroupByMonth, expensesCategories, incomeCategories } = parseData();
+
         const stroke = darkMode ? bright : dark;
+        const width = window.innerWidth * 0.8;
+        const expensesHeight = (60 * expensesGroupByMonth.length) + 50;
+        const incomeHeight = (60 * incomeGroupByMonth.length) + 50;
         return (
           <>
-            {groupByMonth && groupByMonth.length && (
-              <Recharts.BarChart
-                width={window.innerWidth * 0.8}
-                height={300}
-                layout='vertical'
-                data={groupByMonth}
-                margin={{
-                  top: 20, right: 30, left: 20, bottom: 5,
-                }}
-              >
-                {/* <Recharts.CartesianGrid strokeDasharray='3 3' /> */}
-                <Recharts.XAxis type='number' stroke={stroke} />
-                <Recharts.YAxis dataKey='date' type='category' fontSize='12' stroke={stroke} />
-                <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} />
-                <Recharts.Legend />
-                {categories.map((category, i) => (
-                  <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={fillColors[i]} />
-                ))}
-              </Recharts.BarChart>
-              // <Recharts.BarChart width={800} height={400} data={groupByMonth}>
-              //   <Recharts.CartesianGrid strokeDasharray="3 3" />
-              //   <Recharts.XAxis dataKey='date' tick={{ fontSize: 0 }} interval={1} tickFormatter={(unixTime) => new Date(unixTime).toString().split(' ')[1] + new Date(unixTime).toString().split(' ')[2]} />
-              //   <Recharts.YAxis tick={{ fontSize: 20 }} />
-              //   <Recharts.Tooltip labelStyle={{ fontSize: 20 }} contentStyle={{ fontSize: 20 }} formatter={(value, name, props) => `$${value.toFixed(2)}`} />
-              //   <Recharts.Bar dataKey='amount' fill="#8884d8" />
-              // </Recharts.BarChart>
+            {data && data.length && (
+              <>
+                <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5 }}>지출</Label>
+                <Recharts.BarChart
+                  width={width}
+                  height={expensesHeight}
+                  layout='vertical'
+                  data={expensesGroupByMonth}
+                  margin={{
+                    top: 20, right: 30, left: 20, bottom: 5,
+                  }}
+                >
+                  <Recharts.XAxis type='number' stroke={stroke} />
+                  <Recharts.YAxis dataKey='date' type='category' fontSize='12' stroke={stroke} />
+                  <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
+                  <Recharts.Legend onClick={(category) => console.log(category)} wrapperStyle={{ cursor: 'pointer' }} />
+                  {expensesCategories.map((category, i) => (
+                    <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
+                  ))}
+                </Recharts.BarChart>
+                <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, marginTop: 50 }}>수입</Label>
+                <Recharts.BarChart
+                  width={width}
+                  height={incomeHeight}
+                  layout='vertical'
+                  data={incomeGroupByMonth}
+                  margin={{
+                    top: 20, right: 30, left: 20, bottom: 5,
+                  }}
+                >
+                  <Recharts.XAxis type='number' stroke={stroke} />
+                  <Recharts.YAxis dataKey='date' type='category' fontSize='12' stroke={stroke} />
+                  <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
+                  <Recharts.Legend />
+                  {incomeCategories.map((category, i) => (
+                    <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
+                  ))}
+                </Recharts.BarChart>
+              </>
             )}
           </>
         );
+      case '/raw':
+        return <Icon icon='build' size={100} />;
       default:
         break;
     }

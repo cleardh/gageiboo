@@ -4,9 +4,9 @@ import Head from 'next/head';
 // import axios from 'axios';
 const XLSX = require('xlsx');
 import * as Recharts from 'recharts';
-import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider } from '@blueprintjs/core';
-import { DateInput } from '@blueprintjs/datetime';
-import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
+import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox } from '@blueprintjs/core';
+// import { DateInput } from '@blueprintjs/datetime';
+// import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
@@ -18,58 +18,10 @@ const bright = '#f5f5f5';
 export default function Home() {
   const [page, setPage] = useState('/chart');
   const [darkMode, setDarkMode] = useState(true);
-  const [formData, setFormData] = useState({
-    amount: '',
-    date: (new Date()).toLocaleDateString(),
-    type: 'credit',
-    location: '',
-    category: '',
-    memo: ''
-  });
-  const [transactions, setTransactions] = useState(null);
   const [data, setData] = useState(null);
+  const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
+  const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
   const xlsxRef = useRef(null);
-  const updateFormData = (key, value) => {
-    setFormData({
-      ...formData,
-      [key]: value
-    });
-  }
-  const setType = (e) => {
-    const toggle = e.target.checked;
-    setFormData({
-      ...formData,
-      type: toggle ? 'debit' : 'credit'
-    });
-  }
-  useEffect(() => {
-    if (document.getElementById('amountInput')) document.getElementById('amountInput').focus();
-  }, [page]);
-  // useEffect(() => fetchData(), [page]);
-  // const fetchData = async () => {
-  //   axios.get('/api/transactions')
-  //     .then(res => setTransactions(res.data))
-  //     .catch(err => console.log(err));
-  // }
-  const postData = async () => {
-    // axios.post('/api/transactions', formData)
-    //   .then(() => setFormData({
-    //     amount: null,
-    //     date: (new Date()).toLocaleDateString(),
-    //     type: 'credit',
-    //     location: '',
-    //     category: '',
-    //     memo: ''
-    //   })).catch(err => console.log(err));
-    setFormData({
-      amount: '',
-      date: (new Date()).toLocaleDateString(),
-      type: 'credit',
-      location: '',
-      category: '',
-      memo: ''
-    })
-  }
   const isValidSheet = (sheetName) => {
     const sheetNameToLowerCase = sheetName.toLowerCase();
     if (
@@ -108,48 +60,40 @@ export default function Home() {
           if (isValidSheet(sheetName)) {
             const XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
             const parsed_row_object = XL_row_object.map(row => ({ ...row, '날짜': excelDateToJSDate(row['날짜']) }));
-            // const json_object = JSON.stringify(parsed_row_object);
             rawData = [...rawData, ...parsed_row_object];
           }
         });
-        setData(rawData);
+        parseData(rawData);
       };
       reader.readAsBinaryString(e.target.files[0]);
     }
   }
-  const groupBy = (array, key) => {
-    return array
-      .reduce((hash, obj) => {
-        if (obj[key] === undefined) return hash;
-        return Object.assign(hash, { [obj[key]]: (hash[obj[key]] || []).concat(obj) })
-      }, {})
-  }
-  const parseData = () => {
-    const expensesGroupByMonth = [];
-    const expensesCategories = [];
-    const incomeGroupByMonth = [];
+  const parseData = (rawData) => {
+    const expenseData = [];
+    const expenseCategories = [];
+    const incomeData = [];
     const incomeCategories = [];
-    data.forEach(row => {
+    rawData.forEach(row => {
       if (row['수입']) {
-        const dataRow = incomeGroupByMonth.find(d => d.date === row['날짜'].substring(0, 7));
+        const dataRow = incomeData.find(d => d.month === row['날짜'].substring(0, 7));
         if (incomeCategories.indexOf(row['카테고리']) < 0) incomeCategories.push(row['카테고리']);
         if (dataRow) {
           if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['수입']);
           return dataRow[row['카테고리']] += parseFloat(row['수입']);
         }
-        incomeGroupByMonth.push({ date: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['수입']) });
+        incomeData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['수입']) });
         return;
       }
-      const dataRow = expensesGroupByMonth.find(d => d.date === row['날짜'].substring(0, 7));
-      if (expensesCategories.indexOf(row['카테고리']) < 0) expensesCategories.push(row['카테고리']);
+      const dataRow = expenseData.find(d => d.month === row['날짜'].substring(0, 7));
+      if (expenseCategories.indexOf(row['카테고리']) < 0) expenseCategories.push(row['카테고리']);
       if (dataRow) {
         if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
         return dataRow[row['카테고리']] += parseFloat(row['지출']);
       }
-      expensesGroupByMonth.push({ date: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
+      expenseData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
     });
-    expensesGroupByMonth.forEach(row => {
-      expensesCategories.forEach(category => {
+    expenseData.forEach(row => {
+      expenseCategories.forEach(category => {
         if (!row[category]) {
           row[category] = 0;
         } else {
@@ -157,7 +101,75 @@ export default function Home() {
         }
       });
     });
-    return { expensesGroupByMonth, expensesCategories, incomeGroupByMonth, incomeCategories };
+    const expenseCategoriesObject = expenseCategories.map(category => ({ [category]: true }));
+    const incomeCategoriesObject = incomeCategories.map(category => ({ [category]: true }));
+    const expenseMonths = expenseData.map(row => ({ [row.month]: true }));
+    const incomeMonths = incomeData.map(row => ({ [row.month]: true }));
+    setData({
+      expenseData,
+      incomeData,
+      expenseMonths,
+      incomeMonths,
+      expenseCategories: expenseCategoriesObject,
+      incomeCategories: incomeCategoriesObject
+    });
+  }
+  const filterData = (rawData) => {
+    const { expenseData, incomeData, expenseMonths, incomeMonths, expenseCategories, incomeCategories } = rawData;
+    const expenseMonthsToFilter = expenseMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]);
+    const incomeMonthsToFilter = incomeMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]);
+    const expenseCategoriesToFilter = expenseCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]);
+    const incomeCategoriesToFilter = incomeCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]);
+    const expense = expenseData.filter(row => expenseMonthsToFilter.indexOf(row.month) >= 0).map(row => {
+      Object.keys(row).forEach(element => {
+        if (element !== 'month') {
+          if (expenseCategoriesToFilter.indexOf(element) < 0) {
+            row[element] = 0;
+          }
+        }
+      });
+      return row;
+    });
+    const income = incomeData.filter(row => incomeMonthsToFilter.indexOf(row.month) >= 0).map(row => {
+      Object.keys(row).forEach(element => {
+        if (element !== 'month') {
+          if (incomeCategoriesToFilter.indexOf(element) < 0) {
+            row[element] = 0;
+          }
+        }
+      });
+      return row;
+    });
+    // console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
+    return { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter };
+  }
+  // const updateIncomeFilter = (month, category) => {
+  //   if (month) {
+  //     setIncomeFilter({
+  //       ...incomeFilter,
+  //       month: {
+  //         [month]: !incomeFilter.month[month]
+  //       }
+  //     });
+  //   }
+  //   if (category) {
+  //     setIncomeFilter({
+  //       ...incomeFilter,
+  //       category: {
+  //         [category]: !incomeFilter.category[category]
+  //       }
+  //     });
+  //   }
+  // };
+  const checkCategoryFilter = (incomeCategoriesToFilter, row) => {
+    Object.keys(row).forEach(element => {
+      if (element !== 'month') {
+        if (incomeCategoriesToFilter.indexOf(element) < 0) {
+          return false;
+        }
+      }
+    });
+    return true;
   }
   const renderPage = () => {
     switch (page) {
@@ -216,7 +228,7 @@ export default function Home() {
           // </FormGroup>
         );
       case '/chart':
-        if (!data || !data.length) {
+        if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
           return (
             <>
               <input type='file' hidden id='xlsx' ref={xlsxRef} onChange={getDataFromXlsx} />
@@ -224,54 +236,115 @@ export default function Home() {
             </>
           );
         }
-        const { expensesGroupByMonth, incomeGroupByMonth, expensesCategories, incomeCategories } = parseData();
-
+        // Filters
+        const { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter } = filterData(data);
+        console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
         const stroke = darkMode ? bright : dark;
         const width = window.innerWidth * 0.8;
-        const expensesHeight = (60 * expensesGroupByMonth.length) + 50;
-        const incomeHeight = (60 * incomeGroupByMonth.length) + 50;
+        const expenseHeight = (60 * expense.length) + 50;
+        const incomeHeight = (60 * income.length) + 50;
         return (
           <>
-            {data && data.length && (
-              <>
-                <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5 }}>지출</Label>
-                <Recharts.BarChart
-                  width={width}
-                  height={expensesHeight}
-                  layout='vertical'
-                  data={expensesGroupByMonth}
-                  margin={{
-                    top: 20, right: 30, left: 20, bottom: 5,
-                  }}
-                >
-                  <Recharts.XAxis type='number' stroke={stroke} />
-                  <Recharts.YAxis dataKey='date' type='category' fontSize='12' stroke={stroke} />
-                  <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
-                  <Recharts.Legend onClick={(category) => console.log(category)} wrapperStyle={{ cursor: 'pointer' }} />
-                  {expensesCategories.map((category, i) => (
-                    <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
-                  ))}
-                </Recharts.BarChart>
-                <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, marginTop: 50 }}>수입</Label>
-                <Recharts.BarChart
-                  width={width}
-                  height={incomeHeight}
-                  layout='vertical'
-                  data={incomeGroupByMonth}
-                  margin={{
-                    top: 20, right: 30, left: 20, bottom: 5,
-                  }}
-                >
-                  <Recharts.XAxis type='number' stroke={stroke} />
-                  <Recharts.YAxis dataKey='date' type='category' fontSize='12' stroke={stroke} />
-                  <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
-                  <Recharts.Legend />
-                  {incomeCategories.map((category, i) => (
-                    <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
-                  ))}
-                </Recharts.BarChart>
-              </>
-            )}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
+              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => setDisplayExpenseFilter(true)}></Icon>
+            </div>
+            <Overlay className='overlay' isOpen={displayExpenseFilter}>
+              <div className='overlay-filter'>
+                <span style={{ fontSize: 25 }}>지출</span>
+                <div style={{ width: '80%', height: '60%', marginTop: 20, display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ width: '45%', height: '100%', overflowY: 'scroll' }}>
+                    {/* months go here */}
+                    {data.expenseMonths.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        // onChange={() => updateExpenseFilter(data.date, null)} 
+                        onChange={() => console.log(row)}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ width: '45%', height: '100%', overflowY: 'scroll' }}>
+                    {/* categories go here */}
+                    {data.expenseCategories.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        // onChange={() => updateExpenseFilter(data.date, null)} 
+                        onChange={() => console.log(row)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 20 }}>
+                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} />
+                  <Button icon='cross' text='Close' type='button' intent={Intent.DANGER} />
+                </div>
+              </div>
+            </Overlay>
+            <Recharts.BarChart
+              width={width}
+              height={expenseHeight}
+              layout='vertical'
+              data={expense}
+              margin={{
+                top: 20, right: 30, left: 20, bottom: 5,
+              }}
+            >
+              <Recharts.XAxis type='number' stroke={stroke} />
+              <Recharts.YAxis dataKey='month' type='category' fontSize='12' stroke={stroke} />
+              <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.Legend onClick={(category) => console.log(category)} wrapperStyle={{ cursor: 'pointer' }} />
+              {expenseCategoriesToFilter.map((category, i) => (
+                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
+              ))}
+            </Recharts.BarChart>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
+              <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
+              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => setDisplayIncomeFilter(true)}></Icon>
+            </div>
+            <Overlay className='overlay' isOpen={displayIncomeFilter}>
+              <div className='overlay-filter'>
+                <span style={{ fontSize: 25 }}>수입</span>
+                <div style={{ width: '80%', height: '60%', marginTop: 20, display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ width: '45%', height: '100%', overflow: scroll }}>
+                    {/* months go here */}
+                    {data.incomeMonths.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        // onChange={() => updateIncomeFilter(data.date, null)} 
+                        onChange={() => console.log(row)}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ width: '45%', height: '100%', overflow: scroll }}>
+                    {/* categories go here */}
+                    {data.incomeCategories.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        // onChange={() => updateIncomeFilter(data.date, null)} 
+                        onChange={() => console.log(row)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 20 }}>
+                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} />
+                  <Button icon='cross' text='Close' type='button' intent={Intent.DANGER} />
+                </div>
+              </div>
+            </Overlay>
+            <Recharts.BarChart
+              width={width}
+              height={incomeHeight}
+              layout='vertical'
+              data={income}
+              margin={{
+                top: 20, right: 30, left: 20, bottom: 5,
+              }}
+            >
+              <Recharts.XAxis type='number' stroke={stroke} />
+              <Recharts.YAxis dataKey='month' type='category' fontSize='12' stroke={stroke} />
+              <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.Legend />
+              {incomeCategoriesToFilter.map((category, i) => (
+                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
+              ))}
+            </Recharts.BarChart>
           </>
         );
       case '/raw':
@@ -362,6 +435,36 @@ export default function Home() {
         }
         #memo {
           text-align: left;
+        }
+        .icon-filter:hover {
+          animation: shake 0.92s;
+        }
+        @keyframes shake {
+          10%, 90% {
+            transform: translate3d(-1px, 0, 0);
+          }
+          20%, 80% {
+            transform: translate3d(2px, 0, 0);
+          }
+          30%, 50%, 70% {
+            transform: translate3d(-4px, 0, 0);
+          }
+          40%, 60% {
+            transform: translate3d(4px, 0, 0);
+          }
+        }
+        .overlay-filter {
+          width: 50%;
+          height: 50%;
+          position: fixed;
+          left: 25%;
+          top: 25%;
+          color: #f5f5f5;
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
         }
       `}</style>
   )

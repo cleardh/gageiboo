@@ -1,210 +1,500 @@
-import Head from 'next/head'
-import clientPromise from '../lib/mongodb'
+import { useState, useEffect, useRef } from 'react';
+import Head from 'next/head';
+// import clientPromise from '../lib/mongodb';
+// import axios from 'axios';
+const XLSX = require('xlsx');
+import * as Recharts from 'recharts';
+import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox } from '@blueprintjs/core';
+// import { DateInput } from '@blueprintjs/datetime';
+// import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
+import '@blueprintjs/core/lib/css/blueprint.css';
+import 'react-day-picker/lib/style.css';
+import '@blueprintjs/table/lib/css/table.css';
+import colors from '../utils/colors';
 
-export default function Home({ isConnected }) {
-  return (
-    <div className="container">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main>
-        <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next.js with MongoDB!</a>
-        </h1>
-
-        {isConnected ? (
-          <h2 className="subtitle">You are connected to MongoDB</h2>
-        ) : (
-          <h2 className="subtitle">
-            You are NOT connected to MongoDB. Check the <code>README.md</code>{' '}
-            for instructions.
-          </h2>
-        )}
-
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="logo" />
-        </a>
-      </footer>
-
-      <style jsx>{`
-        .container {
-          min-height: 100vh;
-          padding: 0 0.5rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
+const green = '#188050';
+const dark = '#30404d';
+const bright = '#f5f5f5';
+export default function Home() {
+  const [page, setPage] = useState('/chart');
+  const [darkMode, setDarkMode] = useState(true);
+  const [data, setData] = useState(null);
+  const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
+  const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
+  const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
+  const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
+  const xlsxRef = useRef(null);
+  const isValidSheet = (sheetName) => {
+    const sheetNameToLowerCase = sheetName.toLowerCase();
+    if (
+      sheetNameToLowerCase.indexOf('jan') >= 0 ||
+      sheetNameToLowerCase.indexOf('feb') >= 0 ||
+      sheetNameToLowerCase.indexOf('mar') >= 0 ||
+      sheetNameToLowerCase.indexOf('apr') >= 0 ||
+      sheetNameToLowerCase.indexOf('may') >= 0 ||
+      sheetNameToLowerCase.indexOf('jun') >= 0 ||
+      sheetNameToLowerCase.indexOf('jul') >= 0 ||
+      sheetNameToLowerCase.indexOf('aug') >= 0 ||
+      sheetNameToLowerCase.indexOf('sep') >= 0 ||
+      sheetNameToLowerCase.indexOf('oct') >= 0 ||
+      sheetNameToLowerCase.indexOf('nov') >= 0 ||
+      sheetNameToLowerCase.indexOf('dec') >= 0
+    ) {
+      return true;
+    }
+    return false;
+  }
+  const excelDateToJSDate = (excelDate) => {
+    var date = new Date(Math.round((excelDate - (25567 + 2)) * 86400 * 1000));
+    var converted_date = date.toISOString().split('T')[0];
+    return converted_date;
+  }
+  const getDataFromXlsx = (e) => {
+    if (e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = e.target.result;
+        const rawData = [];
+        const workbook = XLSX.read(data, {
+          type: 'binary'
+        });
+        workbook.SheetNames.forEach(sheetName => {
+          if (isValidSheet(sheetName)) {
+            const XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+            const parsed_row_object = XL_row_object.map(row => ({ ...row, '날짜': excelDateToJSDate(row['날짜']) }));
+            rawData = [...rawData, ...parsed_row_object];
+          }
+        });
+        parseData(rawData);
+      };
+      reader.readAsBinaryString(e.target.files[0]);
+    }
+  }
+  const parseData = (rawData) => {
+    const expenseData = [];
+    const expenseCategories = [];
+    const incomeData = [];
+    const incomeCategories = [];
+    rawData.forEach(row => {
+      if (row['수입']) {
+        const dataRow = incomeData.find(d => d.month === row['날짜'].substring(0, 7));
+        if (incomeCategories.indexOf(row['카테고리']) < 0) incomeCategories.push(row['카테고리']);
+        if (dataRow) {
+          if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['수입']);
+          return dataRow[row['카테고리']] += parseFloat(row['수입']);
         }
-
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer img {
-          margin-left: 0.5rem;
-        }
-
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
-
-        .title a {
-          color: #0070f3;
-          text-decoration: none;
-        }
-
-        .title a:hover,
-        .title a:focus,
-        .title a:active {
-          text-decoration: underline;
-        }
-
-        .title {
-          margin: 0;
-          line-height: 1.15;
-          font-size: 4rem;
-        }
-
-        .title,
-        .description {
-          text-align: center;
-        }
-
-        .subtitle {
-          font-size: 2rem;
-        }
-
-        .description {
-          line-height: 1.5;
-          font-size: 1.5rem;
-        }
-
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .grid {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-
-          max-width: 800px;
-          margin-top: 3rem;
-        }
-
-        .card {
-          margin: 1rem;
-          flex-basis: 45%;
-          padding: 1.5rem;
-          text-align: left;
-          color: inherit;
-          text-decoration: none;
-          border: 1px solid #eaeaea;
-          border-radius: 10px;
-          transition: color 0.15s ease, border-color 0.15s ease;
-        }
-
-        .card:hover,
-        .card:focus,
-        .card:active {
-          color: #0070f3;
-          border-color: #0070f3;
-        }
-
-        .card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.5rem;
-        }
-
-        .card p {
-          margin: 0;
-          font-size: 1.25rem;
-          line-height: 1.5;
-        }
-
-        .logo {
-          height: 1em;
-        }
-
-        @media (max-width: 600px) {
-          .grid {
-            width: 100%;
-            flex-direction: column;
+        incomeData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['수입']) });
+        return;
+      }
+      const dataRow = expenseData.find(d => d.month === row['날짜'].substring(0, 7));
+      if (expenseCategories.indexOf(row['카테고리']) < 0) expenseCategories.push(row['카테고리']);
+      if (dataRow) {
+        if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
+        return dataRow[row['카테고리']] += parseFloat(row['지출']);
+      }
+      expenseData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
+    });
+    const expenseCategoriesObject = expenseCategories.map(category => ({ [category]: true }));
+    const incomeCategoriesObject = incomeCategories.map(category => ({ [category]: true }));
+    const expenseMonths = expenseData.map(row => ({ [row.month]: true }));
+    const incomeMonths = incomeData.map(row => ({ [row.month]: true }));
+    setData({
+      expenseData,
+      incomeData,
+      expenseMonths,
+      incomeMonths,
+      expenseCategories: expenseCategoriesObject,
+      incomeCategories: incomeCategoriesObject
+    });
+  }
+  const filterData = (rawData) => {
+    const { expenseData, incomeData, expenseMonths, incomeMonths, expenseCategories, incomeCategories } = rawData;
+    const expenseMonthsToFilter = expenseMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]);
+    const incomeMonthsToFilter = incomeMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]);
+    const expenseCategoriesToFilter = expenseCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]);
+    const incomeCategoriesToFilter = incomeCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]);
+    const expense = expenseData.filter(row => expenseMonthsToFilter.indexOf(row.month) >= 0).map(row => {
+      Object.keys(row).forEach(element => {
+        if (element !== 'month') {
+          if (expenseCategoriesToFilter.indexOf(element) < 0) {
+            return;
           }
         }
-      `}</style>
-
-      <style jsx global>{`
+      });
+      return row;
+    });
+    const income = incomeData.filter(row => incomeMonthsToFilter.indexOf(row.month) >= 0).map(row => {
+      Object.keys(row).forEach(element => {
+        if (element !== 'month') {
+          if (incomeCategoriesToFilter.indexOf(element) < 0) {
+            return;
+          }
+        }
+      });
+      return row;
+    });
+    return { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter };
+  }
+  const openFilters = (type) => {
+    if (type === 'expense') {
+      setRememberExpenseFilters({
+        expenseMonths: data.expenseMonths,
+        expenseCategories: data.expenseCategories
+      });
+      setDisplayExpenseFilter(true);
+    }
+    if (type === 'income') {
+      setRememberIncomeFilters({
+        incomeMonths: data.incomeMonths,
+        incomeCategories: data.incomeCategories
+      });
+      setDisplayIncomeFilter(true);
+    }
+  }
+  const updateFilter = (type, month, category) => {
+    if (type === 'expense') {
+      if (category) {
+        setData({
+          ...data,
+          expenseCategories: data.expenseCategories.map(catObj => {
+            if (Object.keys(catObj)[0] === category) {
+              return { [Object.keys(catObj)[0]]: !catObj[Object.keys(catObj)[0]] }
+            } else {
+              return catObj;
+            }
+          })
+        });
+      }
+      if (month) {
+        setData({
+          ...data,
+          expenseMonths: data.expenseMonths.map(monthObj => {
+            if (Object.keys(monthObj)[0] === month) {
+              return { [Object.keys(monthObj)[0]]: !monthObj[Object.keys(monthObj)[0]] }
+            } else {
+              return monthObj;
+            }
+          })
+        });
+      }
+    }
+    if (type === 'income') {
+      if (category) {
+        setData({
+          ...data,
+          incomeCategories: data.incomeCategories.map(catObj => {
+            if (Object.keys(catObj)[0] === category) {
+              return { [Object.keys(catObj)[0]]: !catObj[Object.keys(catObj)[0]] }
+            } else {
+              return catObj;
+            }
+          })
+        });
+      }
+      if (month) {
+        setData({
+          ...data,
+          incomeMonths: data.incomeMonths.map(monthObj => {
+            if (Object.keys(monthObj)[0] === month) {
+              return { [Object.keys(monthObj)[0]]: !monthObj[Object.keys(monthObj)[0]] }
+            } else {
+              return monthObj;
+            }
+          })
+        });
+      }
+    }
+  };
+  const selectAll = (type, filterType) => {
+    if (type === 'expense') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          expenseMonths: data.expenseMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: true }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          expenseCategories: data.expenseCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: true }
+          })
+        })
+      }
+    }
+    if (type === 'income') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          incomeMonths: data.incomeMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: true }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          incomeCategories: data.incomeCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: true }
+          })
+        })
+      }
+    }
+  }
+  const deSelectAll = (type, filterType) => {
+    if (type === 'expense') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          expenseMonths: data.expenseMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: false }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          expenseCategories: data.expenseCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: false }
+          })
+        })
+      }
+    }
+    if (type === 'income') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          incomeMonths: data.incomeMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: false }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          incomeCategories: data.incomeCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: false }
+          })
+        })
+      }
+    }
+  }
+  const cancelFilters = (type) => {
+    if (type === 'expense') {
+      setData({
+        ...data,
+        expenseMonths: rememberExpenseFilters.expenseMonths,
+        expenseCategories: rememberExpenseFilters.expenseCategories
+      });
+      setDisplayExpenseFilter(false);
+    }
+    if (type === 'income') {
+      setData({
+        ...data,
+        incomeMonths: rememberIncomeFilters.incomeMonths,
+        incomeCategories: rememberIncomeFilters.incomeCategories
+      });
+      setDisplayIncomeFilter(false);
+    }
+  }
+  const renderPage = () => {
+    switch (page) {
+      case '/':
+        return (
+          <Icon icon='build' size={100} />
+          // <FormGroup>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='amount' className='labels'>Amount</Label>
+          //     <NumericInput id='amount' inputRef={ref => { if (ref) ref.id = 'amountInput'; }} leftIcon='dollar' onValueChange={(valueAsNumber, valueAsString) => updateFormData('amount', valueAsString)} value={formData.amount} buttonPosition='none' />
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='date' className='labels'>Date</Label>
+          //     <DateInput id='date' onChange={selectedDate => updateFormData('date', selectedDate.toLocaleDateString())} value={new Date(formData.date)} formatDate={date => date.toLocaleDateString()} placeholder='MM/DD/YYYY' parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='type' className='labels'>Type</Label>
+          //     <div className='space-around'>
+          //       <Icon icon='minus' size={IconSize.LARGE} />
+          //       <Switch large checked={formData.type === 'debit'} onChange={setType} />
+          //       <Icon icon='plus' size={IconSize.LARGE} />
+          //     </div>
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='location' className='labels'>Location</Label>
+          //     <HTMLSelect onChange={e => updateFormData('location', e.target.value)} value={formData.location}>
+          //       <option value=''></option>
+          //       <option value='sobeys'>Sobeys</option>
+          //       <option value='costco'>Costco</option>
+          //       <option value='walmart'>Walmart</option>
+          //       <option value='canadiantire'>Canadian Tire</option>
+          //     </HTMLSelect>
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='category' className='labels'>Category</Label>
+          //     <HTMLSelect onChange={e => updateFormData('category', e.target.value)} value={formData.category}>
+          //       <option value=''></option>
+          //       <option value='food'>Food</option>
+          //       <option value='gas'>Gas</option>
+          //       <option value='toys'>Toys</option>
+          //       <option value='misc'>Miscellaneous</option>
+          //     </HTMLSelect>
+          //   </div>
+          //   <div className='form-input-group'>
+          //     <Label htmlFor='memo' className='labels'>Memo</Label>
+          //     <TextArea
+          //       id='memo'
+          //       growVertically={true}
+          //       intent={Intent.PRIMARY}
+          //       onChange={e => updateFormData('memo', e.target.value)}
+          //       value={formData.memo}
+          //     />
+          //   </div>
+          //   <hr style={{ width: '100%' }} />
+          //   <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
+          // </FormGroup>
+        );
+      case '/chart':
+        if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
+          return (
+            <>
+              <input type='file' hidden id='xlsx' ref={xlsxRef} onChange={getDataFromXlsx} />
+              <Button icon='plus' type='button' intent={Intent.SUCCESS} onClick={() => xlsxRef.current.click()} />
+            </>
+          );
+        }
+        // Filters
+        const { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter } = filterData(data);
+        console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
+        const stroke = darkMode ? bright : dark;
+        const width = window.innerWidth * 0.8;
+        const expenseHeight = (50 * expense.length) + 100;
+        const incomeHeight = (50 * income.length) + 100;
+        return (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
+              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>
+            </div>
+            <Overlay className='overlay' isOpen={displayExpenseFilter}>
+              <div className='overlay-filter'>
+                <span style={{ fontSize: 25 }}>지출</span>
+                <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                    {/* months go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('expense', 'months')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />ß
+                    </div>
+                    {data.expenseMonths.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        onChange={() => updateFilter('expense', Object.keys(row)[0], null)}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                    {/* categories go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('expense', 'categories')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'categories')} />
+                    </div>
+                    {data.expenseCategories.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        onChange={() => updateFilter('expense', null, Object.keys(row)[0])}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
+                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayExpenseFilter(false)} />
+                  <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('expense')} />
+                </div>
+              </div>
+            </Overlay>
+            <Recharts.BarChart
+              width={width}
+              height={expenseHeight}
+              layout='vertical'
+              data={expense}
+              margin={{
+                top: 20, right: 30, left: 20, bottom: 5,
+              }}
+            >
+              <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
+              {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
+              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.Legend wrapperStyle={{ cursor: 'pointer' }} />
+              {expenseCategoriesToFilter.map((category, i) => (
+                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
+              ))}
+            </Recharts.BarChart>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
+              <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
+              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('income')}></Icon>
+            </div>
+            <Overlay className='overlay' isOpen={displayIncomeFilter}>
+              <div className='overlay-filter'>
+                <span style={{ fontSize: 25 }}>수입</span>
+                <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                    {/* months go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('income', 'months')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'months')} />
+                    </div>
+                    {data.incomeMonths.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        onChange={() => updateFilter('income', Object.keys(row)[0], null)}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                    {/* categories go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('income', 'categories')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'categories')} />
+                    </div>
+                    {data.incomeCategories.map((row, i) => (
+                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
+                        onChange={() => updateFilter('income', null, Object.keys(row)[0])}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
+                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayIncomeFilter(false)} />
+                  <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('income')} />
+                </div>
+              </div>
+            </Overlay>
+            <Recharts.BarChart
+              width={width}
+              height={incomeHeight}
+              layout='vertical'
+              data={income}
+              margin={{
+                top: 20, right: 30, left: 20, bottom: 5,
+              }}
+            >
+              <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
+              {income && income.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
+              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.Legend />
+              {incomeCategoriesToFilter.map((category, i) => (
+                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
+              ))}
+            </Recharts.BarChart>
+          </>
+        );
+      case '/raw':
+        return <Icon icon='build' size={100} />;
+      default:
+        break;
+    }
+  }
+  const globalStyle = (
+    <style jsx global>{`
         html,
         body {
           padding: 0;
@@ -213,30 +503,152 @@ export default function Home({ isConnected }) {
             Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
             sans-serif;
         }
-
         * {
           box-sizing: border-box;
         }
+        .container {
+          min-height: 100vh;
+          padding: 0 0.5rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          background: ${darkMode ? dark : bright};
+          color: ${darkMode ? bright : dark};
+        }
+        .navbar {
+          width: 100%;
+          height: 40px;
+          position: fixed;
+          left: 0;
+          top: 0;
+          background: ${green};
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          padding-right: 100px;
+          color: ${bright};
+        }
+        .navbar-elements {
+          cursor: pointer;
+          margin: 0 15px;
+          ${!darkMode ? 'filter: invert(1);' : ''}
+        }
+        .navbar-elements:hover {
+          filter: opacity(0.5);
+        }
+        .navbar-tooltip {
+          top: 50px;
+        }
+        .dialog-content {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 30px 30px 0;
+        }
+        .form-input-group {
+          margin: 10px 0;
+        }
+        .bp3-input {
+          width: 200px !important;
+          text-align: right;
+        }
+        .labels {
+          font-weight: 600;
+          -moz-user-select: none;
+          -webkit-user-select: none;
+          -ms-user-select:none;
+          user-select:none;
+          -o-user-select:none; 
+        }
+        .btn-submit, .bp3-html-select {
+          width: 200px;
+        }
+        .btn-submit {
+          margin-top: 10px;
+        }
+        .space-around {
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+        }
+        #memo {
+          text-align: left;
+        }
+        .icon-filter:hover {
+          animation: shake 0.92s;
+        }
+        @keyframes shake {
+          10%, 90% {
+            transform: translate3d(-1px, 0, 0);
+          }
+          20%, 80% {
+            transform: translate3d(2px, 0, 0);
+          }
+          30%, 50%, 70% {
+            transform: translate3d(-4px, 0, 0);
+          }
+          40%, 60% {
+            transform: translate3d(4px, 0, 0);
+          }
+        }
+        .overlay-filter {
+          width: 50%;
+          height: 50%;
+          position: fixed;
+          left: 25%;
+          top: 25%;
+          color: #f5f5f5;
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+        }
       `}</style>
+  )
+  return (
+    <div className='container'>
+      <Head>
+        <title>Gageiboo</title>
+        <link rel='icon' href='/favicon.ico' />
+      </Head>
+
+      <main>
+        <Navbar fixedToTop className='navbar'>
+          <Navbar.Group align={Alignment.RIGHT}>
+            <Icon icon='insert' size={IconSize.LARGE} onClick={() => setPage('/')} className='navbar-elements' />
+            <Icon icon='chart' size={IconSize.LARGE} onClick={() => setPage('/chart')} className='navbar-elements' />
+            <Icon icon='th' size={IconSize.LARGE} onClick={() => setPage('/raw')} className='navbar-elements' />
+            <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
+          </Navbar.Group>
+        </Navbar>
+        {renderPage()}
+        {/* <Spinner intent={Intent.WARNING} size={75} /> */}
+      </main>
+      {globalStyle}
     </div>
   )
 }
 
-export async function getServerSideProps(context) {
-  try {
-    // client.db() will be the default database passed in the MONGODB_URI
-    // You can change the database by calling the client.db() function and specifying a database like:
-    // const db = client.db("myDatabase");
-    // Then you can execute queries against your database like so:
-    // db.find({}) or any of the MongoDB Node Driver commands
-    await clientPromise
-    return {
-      props: { isConnected: true },
-    }
-  } catch (e) {
-    console.error(e)
-    return {
-      props: { isConnected: false },
-    }
-  }
-}
+// export async function getServerSideProps(context) {
+//   try {
+//     // client.db() will be the default database passed in the MONGODB_URI
+//     // You can change the database by calling the client.db() function and specifying a database like:
+//     // const db = client.db('myDatabase');
+//     // Then you can execute queries against your database like so:
+//     // db.find({}) or any of the MongoDB Node Driver commands
+//     await clientPromise;
+//     return {
+//       props: {
+//         isConnected: true
+//       },
+//     }
+//   } catch (e) {
+//     console.error(e)
+//     return {
+//       props: { isConnected: false },
+//     }
+//   }
+// }

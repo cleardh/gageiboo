@@ -71,6 +71,7 @@ export default function Home() {
     }
   }
   const parseData = (rawData) => {
+    console.log('testing..');
     const expenseData = [];
     const expenseCategories = [];
     const incomeData = [];

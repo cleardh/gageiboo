@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3005",
-    "deploy:heroku": "heroku git:remote -a gageiboo",
+    "deploy:heroku": "bash deploy.sh",
     "build": "next build",
     "start": "next start"
   },

@@ -109,10 +109,10 @@ export default function Home() {
   }
   const filterData = (rawData) => {
     const { expenseData, incomeData, expenseMonths, incomeMonths, expenseCategories, incomeCategories } = rawData;
-    const expenseMonthsToFilter = expenseMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]);
-    const incomeMonthsToFilter = incomeMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]);
-    const expenseCategoriesToFilter = expenseCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]);
-    const incomeCategoriesToFilter = incomeCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]);
+    const expenseMonthsToFilter = expenseMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]).filter(month => month);
+    const incomeMonthsToFilter = incomeMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]).filter(month => month);
+    const expenseCategoriesToFilter = expenseCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]).filter(cat => cat);
+    const incomeCategoriesToFilter = incomeCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]).filter(cat => cat);
     const expense = expenseData.filter(row => expenseMonthsToFilter.indexOf(row.month) >= 0).map(row => {
       Object.keys(row).forEach(element => {
         if (element !== 'month') {
@@ -213,7 +213,7 @@ export default function Home() {
           expenseMonths: data.expenseMonths.map(monthObj => {
             return { [Object.keys(monthObj)[0]]: true }
           })
-        })
+        });
       }
       if (filterType === 'categories') {
         setData({
@@ -221,7 +221,7 @@ export default function Home() {
           expenseCategories: data.expenseCategories.map(catObj => {
             return { [Object.keys(catObj)[0]]: true }
           })
-        })
+        });
       }
     }
     if (type === 'income') {
@@ -231,7 +231,7 @@ export default function Home() {
           incomeMonths: data.incomeMonths.map(monthObj => {
             return { [Object.keys(monthObj)[0]]: true }
           })
-        })
+        });
       }
       if (filterType === 'categories') {
         setData({
@@ -239,7 +239,7 @@ export default function Home() {
           incomeCategories: data.incomeCategories.map(catObj => {
             return { [Object.keys(catObj)[0]]: true }
           })
-        })
+        });
       }
     }
   }
@@ -251,7 +251,7 @@ export default function Home() {
           expenseMonths: data.expenseMonths.map(monthObj => {
             return { [Object.keys(monthObj)[0]]: false }
           })
-        })
+        });
       }
       if (filterType === 'categories') {
         setData({
@@ -259,7 +259,7 @@ export default function Home() {
           expenseCategories: data.expenseCategories.map(catObj => {
             return { [Object.keys(catObj)[0]]: false }
           })
-        })
+        });
       }
     }
     if (type === 'income') {
@@ -269,7 +269,7 @@ export default function Home() {
           incomeMonths: data.incomeMonths.map(monthObj => {
             return { [Object.keys(monthObj)[0]]: false }
           })
-        })
+        });
       }
       if (filterType === 'categories') {
         setData({
@@ -277,7 +277,7 @@ export default function Home() {
           incomeCategories: data.incomeCategories.map(catObj => {
             return { [Object.keys(catObj)[0]]: false }
           })
-        })
+        });
       }
     }
   }
@@ -424,7 +424,7 @@ export default function Home() {
               <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
               {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
               <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
-              <Recharts.Legend wrapperStyle={{ cursor: 'pointer' }} />
+              <Recharts.Legend iconType='circle' />
               {expenseCategoriesToFilter.map((category, i) => (
                 <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
               ))}
@@ -480,7 +480,7 @@ export default function Home() {
               <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
               {income && income.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
               <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
-              <Recharts.Legend />
+              <Recharts.Legend iconType='circle' />
               {incomeCategoriesToFilter.map((category, i) => (
                 <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
               ))}

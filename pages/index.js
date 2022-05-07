@@ -19,6 +19,8 @@ export default function Home() {
   const [page, setPage] = useState('/chart');
   const [darkMode, setDarkMode] = useState(true);
   const [data, setData] = useState(null);
+  const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
+  const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
   const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
   const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
   const xlsxRef = useRef(null);
@@ -92,15 +94,6 @@ export default function Home() {
       }
       expenseData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
     });
-    expenseData.forEach(row => {
-      expenseCategories.forEach(category => {
-        if (!row[category]) {
-          row[category] = 0;
-        } else {
-          row[category] = row[category].toFixed(2);
-        }
-      });
-    });
     const expenseCategoriesObject = expenseCategories.map(category => ({ [category]: true }));
     const incomeCategoriesObject = incomeCategories.map(category => ({ [category]: true }));
     const expenseMonths = expenseData.map(row => ({ [row.month]: true }));
@@ -124,7 +117,7 @@ export default function Home() {
       Object.keys(row).forEach(element => {
         if (element !== 'month') {
           if (expenseCategoriesToFilter.indexOf(element) < 0) {
-            row[element] = 0;
+            return;
           }
         }
       });
@@ -134,42 +127,177 @@ export default function Home() {
       Object.keys(row).forEach(element => {
         if (element !== 'month') {
           if (incomeCategoriesToFilter.indexOf(element) < 0) {
-            row[element] = 0;
+            return;
           }
         }
       });
       return row;
     });
-    // console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
     return { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter };
   }
-  // const updateIncomeFilter = (month, category) => {
-  //   if (month) {
-  //     setIncomeFilter({
-  //       ...incomeFilter,
-  //       month: {
-  //         [month]: !incomeFilter.month[month]
-  //       }
-  //     });
-  //   }
-  //   if (category) {
-  //     setIncomeFilter({
-  //       ...incomeFilter,
-  //       category: {
-  //         [category]: !incomeFilter.category[category]
-  //       }
-  //     });
-  //   }
-  // };
-  const checkCategoryFilter = (incomeCategoriesToFilter, row) => {
-    Object.keys(row).forEach(element => {
-      if (element !== 'month') {
-        if (incomeCategoriesToFilter.indexOf(element) < 0) {
-          return false;
-        }
+  const openFilters = (type) => {
+    if (type === 'expense') {
+      setRememberExpenseFilters({
+        expenseMonths: data.expenseMonths,
+        expenseCategories: data.expenseCategories
+      });
+      setDisplayExpenseFilter(true);
+    }
+    if (type === 'income') {
+      setRememberIncomeFilters({
+        incomeMonths: data.incomeMonths,
+        incomeCategories: data.incomeCategories
+      });
+      setDisplayIncomeFilter(true);
+    }
+  }
+  const updateFilter = (type, month, category) => {
+    if (type === 'expense') {
+      if (category) {
+        setData({
+          ...data,
+          expenseCategories: data.expenseCategories.map(catObj => {
+            if (Object.keys(catObj)[0] === category) {
+              return { [Object.keys(catObj)[0]]: !catObj[Object.keys(catObj)[0]] }
+            } else {
+              return catObj;
+            }
+          })
+        });
       }
-    });
-    return true;
+      if (month) {
+        setData({
+          ...data,
+          expenseMonths: data.expenseMonths.map(monthObj => {
+            if (Object.keys(monthObj)[0] === month) {
+              return { [Object.keys(monthObj)[0]]: !monthObj[Object.keys(monthObj)[0]] }
+            } else {
+              return monthObj;
+            }
+          })
+        });
+      }
+    }
+    if (type === 'income') {
+      if (category) {
+        setData({
+          ...data,
+          incomeCategories: data.incomeCategories.map(catObj => {
+            if (Object.keys(catObj)[0] === category) {
+              return { [Object.keys(catObj)[0]]: !catObj[Object.keys(catObj)[0]] }
+            } else {
+              return catObj;
+            }
+          })
+        });
+      }
+      if (month) {
+        setData({
+          ...data,
+          incomeMonths: data.incomeMonths.map(monthObj => {
+            if (Object.keys(monthObj)[0] === month) {
+              return { [Object.keys(monthObj)[0]]: !monthObj[Object.keys(monthObj)[0]] }
+            } else {
+              return monthObj;
+            }
+          })
+        });
+      }
+    }
+  };
+  const selectAll = (type, filterType) => {
+    if (type === 'expense') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          expenseMonths: data.expenseMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: true }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          expenseCategories: data.expenseCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: true }
+          })
+        })
+      }
+    }
+    if (type === 'income') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          incomeMonths: data.incomeMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: true }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          incomeCategories: data.incomeCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: true }
+          })
+        })
+      }
+    }
+  }
+  const deSelectAll = (type, filterType) => {
+    if (type === 'expense') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          expenseMonths: data.expenseMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: false }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          expenseCategories: data.expenseCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: false }
+          })
+        })
+      }
+    }
+    if (type === 'income') {
+      if (filterType === 'months') {
+        setData({
+          ...data,
+          incomeMonths: data.incomeMonths.map(monthObj => {
+            return { [Object.keys(monthObj)[0]]: false }
+          })
+        })
+      }
+      if (filterType === 'categories') {
+        setData({
+          ...data,
+          incomeCategories: data.incomeCategories.map(catObj => {
+            return { [Object.keys(catObj)[0]]: false }
+          })
+        })
+      }
+    }
+  }
+  const cancelFilters = (type) => {
+    if (type === 'expense') {
+      setData({
+        ...data,
+        expenseMonths: rememberExpenseFilters.expenseMonths,
+        expenseCategories: rememberExpenseFilters.expenseCategories
+      });
+      setDisplayExpenseFilter(false);
+    }
+    if (type === 'income') {
+      setData({
+        ...data,
+        incomeMonths: rememberIncomeFilters.incomeMonths,
+        incomeCategories: rememberIncomeFilters.incomeCategories
+      });
+      setDisplayIncomeFilter(false);
+    }
   }
   const renderPage = () => {
     switch (page) {
@@ -241,40 +369,46 @@ export default function Home() {
         console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
         const stroke = darkMode ? bright : dark;
         const width = window.innerWidth * 0.8;
-        const expenseHeight = (60 * expense.length) + 50;
-        const incomeHeight = (60 * income.length) + 50;
+        const expenseHeight = (50 * expense.length) + 100;
+        const incomeHeight = (50 * income.length) + 100;
         return (
           <>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
-              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => setDisplayExpenseFilter(true)}></Icon>
+              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>
             </div>
             <Overlay className='overlay' isOpen={displayExpenseFilter}>
               <div className='overlay-filter'>
                 <span style={{ fontSize: 25 }}>지출</span>
-                <div style={{ width: '80%', height: '60%', marginTop: 20, display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ width: '45%', height: '100%', overflowY: 'scroll' }}>
+                <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
                     {/* months go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('expense', 'months')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />ß
+                    </div>
                     {data.expenseMonths.map((row, i) => (
                       <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        // onChange={() => updateExpenseFilter(data.date, null)} 
-                        onChange={() => console.log(row)}
+                        onChange={() => updateFilter('expense', Object.keys(row)[0], null)}
                       />
                     ))}
                   </div>
-                  <div style={{ width: '45%', height: '100%', overflowY: 'scroll' }}>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
                     {/* categories go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('expense', 'categories')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'categories')} />
+                    </div>
                     {data.expenseCategories.map((row, i) => (
                       <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        // onChange={() => updateExpenseFilter(data.date, null)} 
-                        onChange={() => console.log(row)}
+                        onChange={() => updateFilter('expense', null, Object.keys(row)[0])}
                       />
                     ))}
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 20 }}>
-                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} />
-                  <Button icon='cross' text='Close' type='button' intent={Intent.DANGER} />
+                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
+                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayExpenseFilter(false)} />
+                  <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('expense')} />
                 </div>
               </div>
             </Overlay>
@@ -287,44 +421,50 @@ export default function Home() {
                 top: 20, right: 30, left: 20, bottom: 5,
               }}
             >
-              <Recharts.XAxis type='number' stroke={stroke} />
-              <Recharts.YAxis dataKey='month' type='category' fontSize='12' stroke={stroke} />
-              <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
-              <Recharts.Legend onClick={(category) => console.log(category)} wrapperStyle={{ cursor: 'pointer' }} />
+              <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
+              {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
+              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.Legend wrapperStyle={{ cursor: 'pointer' }} />
               {expenseCategoriesToFilter.map((category, i) => (
                 <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
               ))}
             </Recharts.BarChart>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
               <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
-              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => setDisplayIncomeFilter(true)}></Icon>
+              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('income')}></Icon>
             </div>
             <Overlay className='overlay' isOpen={displayIncomeFilter}>
               <div className='overlay-filter'>
                 <span style={{ fontSize: 25 }}>수입</span>
-                <div style={{ width: '80%', height: '60%', marginTop: 20, display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ width: '45%', height: '100%', overflow: scroll }}>
+                <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
                     {/* months go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('income', 'months')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'months')} />
+                    </div>
                     {data.incomeMonths.map((row, i) => (
                       <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        // onChange={() => updateIncomeFilter(data.date, null)} 
-                        onChange={() => console.log(row)}
+                        onChange={() => updateFilter('income', Object.keys(row)[0], null)}
                       />
                     ))}
                   </div>
-                  <div style={{ width: '45%', height: '100%', overflow: scroll }}>
+                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
                     {/* categories go here */}
+                    <div style={{ display: 'flex', marginBottom: 10 }}>
+                      <Button text='Select all' onClick={() => selectAll('income', 'categories')} />
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'categories')} />
+                    </div>
                     {data.incomeCategories.map((row, i) => (
                       <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        // onChange={() => updateIncomeFilter(data.date, null)} 
-                        onChange={() => console.log(row)}
+                        onChange={() => updateFilter('income', null, Object.keys(row)[0])}
                       />
                     ))}
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 20 }}>
-                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} />
-                  <Button icon='cross' text='Close' type='button' intent={Intent.DANGER} />
+                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
+                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayIncomeFilter(false)} />
+                  <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('income')} />
                 </div>
               </div>
             </Overlay>
@@ -337,9 +477,9 @@ export default function Home() {
                 top: 20, right: 30, left: 20, bottom: 5,
               }}
             >
-              <Recharts.XAxis type='number' stroke={stroke} />
-              <Recharts.YAxis dataKey='month' type='category' fontSize='12' stroke={stroke} />
-              <Recharts.Tooltip labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
+              {income && income.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
+              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
               <Recharts.Legend />
               {incomeCategoriesToFilter.map((category, i) => (
                 <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />

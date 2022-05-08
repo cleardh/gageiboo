@@ -45,8 +45,8 @@ export default function Home() {
     return false;
   }
   const excelDateToJSDate = (excelDate) => {
-    var date = new Date(Math.round((excelDate - (25567 + 2)) * 86400 * 1000));
-    var converted_date = date.toISOString().split('T')[0];
+    const date = new Date(Math.round((excelDate - (25567 + 2)) * 86400 * 1000));
+    const converted_date = date.toISOString().split('T')[0];
     return converted_date;
   }
   const getDataFromXlsx = (e) => {
@@ -75,10 +75,12 @@ export default function Home() {
     const expenseCategories = [];
     const incomeData = [];
     const incomeCategories = [];
+    let eIndex = 0;
+    let iIndex = 0;
     rawData.forEach(row => {
       if (row['수입']) {
         const dataRow = incomeData.find(d => d.month === row['날짜'].substring(0, 7));
-        if (incomeCategories.indexOf(row['카테고리']) < 0) incomeCategories.push(row['카테고리']);
+        if (!incomeCategories.find(catObj => catObj.key === row['카테고리'])) incomeCategories.push({ key: row['카테고리'], value: true, color: colors[iIndex++] });
         if (dataRow) {
           if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['수입']);
           return dataRow[row['카테고리']] += parseFloat(row['수입']);
@@ -87,32 +89,31 @@ export default function Home() {
         return;
       }
       const dataRow = expenseData.find(d => d.month === row['날짜'].substring(0, 7));
-      if (expenseCategories.indexOf(row['카테고리']) < 0) expenseCategories.push(row['카테고리']);
+      if (!expenseCategories.find(catObj => catObj.key === row['카테고리'])) expenseCategories.push({ key: row['카테고리'], value: true, color: colors[eIndex++] });
       if (dataRow) {
         if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
         return dataRow[row['카테고리']] += parseFloat(row['지출']);
       }
       expenseData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
     });
-    const expenseCategoriesObject = expenseCategories.map(category => ({ [category]: true }));
-    const incomeCategoriesObject = incomeCategories.map(category => ({ [category]: true }));
-    const expenseMonths = expenseData.map(row => ({ [row.month]: true }));
-    const incomeMonths = incomeData.map(row => ({ [row.month]: true }));
+    const expenseMonths = expenseData.map(row => ({ key: row.month, value: true }));
+    const incomeMonths = incomeData.map(row => ({ key: row.month, value: true }));
+
     setData({
       expenseData,
       incomeData,
       expenseMonths,
       incomeMonths,
-      expenseCategories: expenseCategoriesObject,
-      incomeCategories: incomeCategoriesObject
+      expenseCategories,
+      incomeCategories
     });
   }
   const filterData = (rawData) => {
     const { expenseData, incomeData, expenseMonths, incomeMonths, expenseCategories, incomeCategories } = rawData;
-    const expenseMonthsToFilter = expenseMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]).filter(month => month);
-    const incomeMonthsToFilter = incomeMonths.map(month => Object.values(month)[0] && Object.keys(month)[0]).filter(month => month);
-    const expenseCategoriesToFilter = expenseCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]).filter(cat => cat);
-    const incomeCategoriesToFilter = incomeCategories.map(category => Object.values(category)[0] && Object.keys(category)[0]).filter(cat => cat);
+    const expenseMonthsToFilter = expenseMonths.map(monthObj => monthObj.value && monthObj.key).filter(month => month);
+    const incomeMonthsToFilter = incomeMonths.map(monthObj => monthObj.value && monthObj.key).filter(month => month);
+    const expenseCategoriesToFilter = expenseCategories.map(catObj => catObj.value && catObj.key).filter(category => category);
+    const incomeCategoriesToFilter = incomeCategories.map(catObj => catObj.value && catObj.key).filter(category => category);
     const expense = expenseData.filter(row => expenseMonthsToFilter.indexOf(row.month) >= 0).map(row => {
       Object.keys(row).forEach(element => {
         if (element !== 'month') {
@@ -156,25 +157,13 @@ export default function Home() {
       if (category) {
         setData({
           ...data,
-          expenseCategories: data.expenseCategories.map(catObj => {
-            if (Object.keys(catObj)[0] === category) {
-              return { [Object.keys(catObj)[0]]: !catObj[Object.keys(catObj)[0]] }
-            } else {
-              return catObj;
-            }
-          })
+          expenseCategories: data.expenseCategories.map(catObj => catObj.key === category ? ({ ...catObj, value: !catObj.value }) : catObj)
         });
       }
       if (month) {
         setData({
           ...data,
-          expenseMonths: data.expenseMonths.map(monthObj => {
-            if (Object.keys(monthObj)[0] === month) {
-              return { [Object.keys(monthObj)[0]]: !monthObj[Object.keys(monthObj)[0]] }
-            } else {
-              return monthObj;
-            }
-          })
+          expenseMonths: data.expenseMonths.map(monthObj => monthObj.key === month ? ({ ...monthObj, value: !monthObj.value }) : monthObj)
         });
       }
     }
@@ -182,25 +171,13 @@ export default function Home() {
       if (category) {
         setData({
           ...data,
-          incomeCategories: data.incomeCategories.map(catObj => {
-            if (Object.keys(catObj)[0] === category) {
-              return { [Object.keys(catObj)[0]]: !catObj[Object.keys(catObj)[0]] }
-            } else {
-              return catObj;
-            }
-          })
+          incomeCategories: data.incomeCategories.map(catObj => catObj.key === category ? ({ ...catObj, value: !catObj.value }) : catObj)
         });
       }
       if (month) {
         setData({
           ...data,
-          incomeMonths: data.incomeMonths.map(monthObj => {
-            if (Object.keys(monthObj)[0] === month) {
-              return { [Object.keys(monthObj)[0]]: !monthObj[Object.keys(monthObj)[0]] }
-            } else {
-              return monthObj;
-            }
-          })
+          incomeMonths: data.incomeMonths.map(monthObj => monthObj.key === month ? ({ ...monthObj, value: !monthObj.value }) : monthObj)
         });
       }
     }
@@ -210,17 +187,13 @@ export default function Home() {
       if (filterType === 'months') {
         setData({
           ...data,
-          expenseMonths: data.expenseMonths.map(monthObj => {
-            return { [Object.keys(monthObj)[0]]: true }
-          })
+          expenseMonths: data.expenseMonths.map(monthObj => ({ ...monthObj, value: true }))
         });
       }
       if (filterType === 'categories') {
         setData({
           ...data,
-          expenseCategories: data.expenseCategories.map(catObj => {
-            return { [Object.keys(catObj)[0]]: true }
-          })
+          expenseCategories: data.expenseCategories.map(catObj => ({ ...catObj, value: true }))
         });
       }
     }
@@ -228,17 +201,13 @@ export default function Home() {
       if (filterType === 'months') {
         setData({
           ...data,
-          incomeMonths: data.incomeMonths.map(monthObj => {
-            return { [Object.keys(monthObj)[0]]: true }
-          })
+          incomeMonths: data.incomeMonths.map(monthObj => ({ ...monthObj, value: true }))
         });
       }
       if (filterType === 'categories') {
         setData({
           ...data,
-          incomeCategories: data.incomeCategories.map(catObj => {
-            return { [Object.keys(catObj)[0]]: true }
-          })
+          incomeCategories: data.incomeCategories.map(catObj => ({ ...catObj, value: true }))
         });
       }
     }
@@ -248,17 +217,13 @@ export default function Home() {
       if (filterType === 'months') {
         setData({
           ...data,
-          expenseMonths: data.expenseMonths.map(monthObj => {
-            return { [Object.keys(monthObj)[0]]: false }
-          })
+          expenseMonths: data.expenseMonths.map(monthObj => ({ ...monthObj, value: false }))
         });
       }
       if (filterType === 'categories') {
         setData({
           ...data,
-          expenseCategories: data.expenseCategories.map(catObj => {
-            return { [Object.keys(catObj)[0]]: false }
-          })
+          expenseCategories: data.expenseCategories.map(catObj => ({ ...catObj, value: false }))
         });
       }
     }
@@ -266,17 +231,13 @@ export default function Home() {
       if (filterType === 'months') {
         setData({
           ...data,
-          incomeMonths: data.incomeMonths.map(monthObj => {
-            return { [Object.keys(monthObj)[0]]: false }
-          })
+          incomeMonths: data.incomeMonths.map(monthObj => ({ ...monthObj, value: false }))
         });
       }
       if (filterType === 'categories') {
         setData({
           ...data,
-          incomeCategories: data.incomeCategories.map(catObj => {
-            return { [Object.keys(catObj)[0]]: false }
-          })
+          incomeCategories: data.incomeCategories.map(catObj => ({ ...catObj, value: false }))
         });
       }
     }
@@ -360,13 +321,13 @@ export default function Home() {
           return (
             <>
               <input type='file' hidden id='xlsx' ref={xlsxRef} onChange={getDataFromXlsx} />
-              <Button icon='plus' type='button' intent={Intent.SUCCESS} onClick={() => xlsxRef.current.click()} />
+              <Button icon='plus' type='button' large={true} intent={Intent.SUCCESS} onClick={() => xlsxRef.current.click()} />
             </>
           );
         }
         // Filters
         const { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter } = filterData(data);
-        console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
+        // console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
         const stroke = darkMode ? bright : dark;
         const width = window.innerWidth * 0.8;
         const expenseHeight = (50 * expense.length) + 100;
@@ -388,8 +349,8 @@ export default function Home() {
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />ß
                     </div>
                     {data.expenseMonths.map((row, i) => (
-                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        onChange={() => updateFilter('expense', Object.keys(row)[0], null)}
+                      <Checkbox key={i} checked={row.value} label={row.key}
+                        onChange={() => updateFilter('expense', row.key, null)}
                       />
                     ))}
                   </div>
@@ -400,8 +361,8 @@ export default function Home() {
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'categories')} />
                     </div>
                     {data.expenseCategories.map((row, i) => (
-                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        onChange={() => updateFilter('expense', null, Object.keys(row)[0])}
+                      <Checkbox key={i} checked={row.value} label={row.key}
+                        onChange={() => updateFilter('expense', null, row.key)}
                       />
                     ))}
                   </div>
@@ -425,9 +386,15 @@ export default function Home() {
               {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
               <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
               <Recharts.Legend iconType='circle' />
-              {expenseCategoriesToFilter.map((category, i) => (
-                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
-              ))}
+              {/* {expenseCategoriesToFilter.map((category, i) => (
+                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)].color} barSize={40} />
+                // <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} barSize={40} />
+              ))} */}
+              {expenseCategoriesToFilter.map((category, i) => {
+                console.log(data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)], data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)].color);
+                return <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)].color} barSize={40} />
+                // <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} barSize={40} />
+              })}
             </Recharts.BarChart>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
               <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
@@ -444,8 +411,8 @@ export default function Home() {
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'months')} />
                     </div>
                     {data.incomeMonths.map((row, i) => (
-                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        onChange={() => updateFilter('income', Object.keys(row)[0], null)}
+                      <Checkbox key={i} checked={row.value} label={row.key}
+                        onChange={() => updateFilter('income', row.key, null)}
                       />
                     ))}
                   </div>
@@ -456,8 +423,8 @@ export default function Home() {
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'categories')} />
                     </div>
                     {data.incomeCategories.map((row, i) => (
-                      <Checkbox key={i} checked={Object.values(row)[0]} label={Object.keys(row)[0]}
-                        onChange={() => updateFilter('income', null, Object.keys(row)[0])}
+                      <Checkbox key={i} checked={row.value} label={row.key}
+                        onChange={() => updateFilter('income', null, row.key)}
                       />
                     ))}
                   </div>
@@ -482,7 +449,7 @@ export default function Home() {
               <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
               <Recharts.Legend iconType='circle' />
               {incomeCategoriesToFilter.map((category, i) => (
-                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} />
+                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} barSize={40} />
               ))}
             </Recharts.BarChart>
           </>

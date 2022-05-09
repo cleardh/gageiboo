@@ -260,6 +260,49 @@ export default function Home() {
       setDisplayIncomeFilter(false);
     }
   }
+  const CustomBarShape = (props) => {
+    const { fill, x, y, width, height } = props;
+    return (
+      <g>
+        <rect
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          stroke='none'
+          fill={fill}
+        />
+        {x > 80 && (
+          <rect
+            x={x}
+            y={y}
+            width={5}
+            height={height}
+            stroke='none'
+            fill={darkMode ? dark : bright}
+          />
+        )}
+      </g>
+    );
+  }
+  const getTotal = (type, parsedData, label) => {
+    let total = 0;
+    if (type === 'expense') {
+      const monthObj = parsedData.find(row => row.month === label);
+      Object.keys(monthObj).forEach(element => {
+        if (element === 'month' || !data.expenseCategories.find(catObj => catObj.key === element).value) return;
+        total += monthObj[element];
+      });
+    }
+    if (type === 'income') {
+      const monthObj = parsedData.find(row => row.month === label);
+      Object.keys(monthObj).forEach(element => {
+        if (element === 'month' || !data.incomeCategories.find(catObj => catObj.key === element).value) return;
+        total += monthObj[element];
+      });
+    }
+    return total.toFixed(2);
+  }
   const renderPage = () => {
     switch (page) {
       case '/':
@@ -384,16 +427,10 @@ export default function Home() {
             >
               <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
               {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
-              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]} - Total: $${getTotal('expense', expense, label)}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
               <Recharts.Legend iconType='circle' />
-              {/* {expenseCategoriesToFilter.map((category, i) => (
-                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)].color} barSize={40} />
-                // <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} barSize={40} />
-              ))} */}
               {expenseCategoriesToFilter.map((category, i) => {
-                console.log(data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)], data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)].color);
-                return <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories[data.expenseCategories.findIndex(catObj => catObj.key === category)].color} barSize={40} />
-                // <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} barSize={40} />
+                return <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
               })}
             </Recharts.BarChart>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
@@ -446,10 +483,10 @@ export default function Home() {
             >
               <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
               {income && income.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
-              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
+              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => `${label.split('-')[0]}/${label.split('-')[1]} - Total: $${getTotal('income', income, label)}`} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
               <Recharts.Legend iconType='circle' />
               {incomeCategoriesToFilter.map((category, i) => (
-                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={colors[i]} barSize={40} />
+                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.incomeCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
               ))}
             </Recharts.BarChart>
           </>

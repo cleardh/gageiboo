@@ -378,29 +378,33 @@ export default function Home() {
               <div className='overlay-filter'>
                 <span style={{ fontSize: 25 }}>지출</span>
                 <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                  <div style={{ width: '45%', height: '100%' }}>
                     {/* months go here */}
                     <div style={{ display: 'flex', marginBottom: 10 }}>
                       <Button text='Select all' onClick={() => selectAll('expense', 'months')} />
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />ß
                     </div>
-                    {data.expenseMonths.map((row, i) => (
-                      <Checkbox key={i} checked={row.value} label={row.key}
-                        onChange={() => updateFilter('expense', row.key, null)}
-                      />
-                    ))}
+                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                      {data.expenseMonths.map((row, i) => (
+                        <Checkbox key={i} checked={row.value} label={row.key}
+                          onChange={() => updateFilter('expense', row.key, null)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                  <div style={{ width: '45%', height: '100%' }}>
                     {/* categories go here */}
                     <div style={{ display: 'flex', marginBottom: 10 }}>
                       <Button text='Select all' onClick={() => selectAll('expense', 'categories')} />
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'categories')} />
                     </div>
-                    {data.expenseCategories.map((row, i) => (
-                      <Checkbox key={i} checked={row.value} label={row.key}
-                        onChange={() => updateFilter('expense', null, row.key)}
-                      />
-                    ))}
+                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                      {data.expenseCategories.map((row, i) => (
+                        <Checkbox key={i} checked={row.value} label={row.key}
+                          onChange={() => updateFilter('expense', null, row.key)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
@@ -439,29 +443,33 @@ export default function Home() {
               <div className='overlay-filter'>
                 <span style={{ fontSize: 25 }}>수입</span>
                 <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                  <div style={{ width: '45%', height: '100%' }}>
                     {/* months go here */}
                     <div style={{ display: 'flex', marginBottom: 10 }}>
                       <Button text='Select all' onClick={() => selectAll('income', 'months')} />
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'months')} />
                     </div>
-                    {data.incomeMonths.map((row, i) => (
-                      <Checkbox key={i} checked={row.value} label={row.key}
-                        onChange={() => updateFilter('income', row.key, null)}
-                      />
-                    ))}
+                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                      {data.incomeMonths.map((row, i) => (
+                        <Checkbox key={i} checked={row.value} label={row.key}
+                          onChange={() => updateFilter('income', row.key, null)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ width: '45%', height: '100%', padding: 5, overflowY: 'scroll' }}>
+                  <div style={{ width: '45%', height: '100%' }}>
                     {/* categories go here */}
                     <div style={{ display: 'flex', marginBottom: 10 }}>
                       <Button text='Select all' onClick={() => selectAll('income', 'categories')} />
                       <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'categories')} />
                     </div>
-                    {data.incomeCategories.map((row, i) => (
-                      <Checkbox key={i} checked={row.value} label={row.key}
-                        onChange={() => updateFilter('income', null, row.key)}
-                      />
-                    ))}
+                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                      {data.incomeCategories.map((row, i) => (
+                        <Checkbox key={i} checked={row.value} label={row.key}
+                          onChange={() => updateFilter('income', null, row.key)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>

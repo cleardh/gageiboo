@@ -287,20 +287,13 @@ export default function Home() {
   }
   const getTotal = (type, parsedData, label) => {
     let total = 0;
-    if (type === 'expense') {
-      const monthObj = parsedData.find(row => row.month === label);
-      Object.keys(monthObj).forEach(element => {
-        if (element === 'month' || !data.expenseCategories.find(catObj => catObj.key === element).value) return;
-        total += monthObj[element];
-      });
-    }
-    if (type === 'income') {
-      const monthObj = parsedData.find(row => row.month === label);
-      Object.keys(monthObj).forEach(element => {
-        if (element === 'month' || !data.incomeCategories.find(catObj => catObj.key === element).value) return;
-        total += monthObj[element];
-      });
-    }
+    const categories = type === 'expense' ? data.expenseCategories : data.incomeCategories;
+    const monthObj = parsedData.find(row => row.month === label);
+    if (!monthObj) return;
+    Object.keys(monthObj).forEach(element => {
+      if (element === 'month' || !categories.find(catObj => catObj.key === element).value) return;
+      total += monthObj[element];
+    });
     return total.toFixed(2);
   }
   const renderPage = () => {

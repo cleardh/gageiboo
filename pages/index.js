@@ -363,13 +363,15 @@ export default function Home() {
         }
         // Filters
         const { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter } = filterData(data);
-        // console.log({ expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter });
         const stroke = darkMode ? bright : dark;
         const width = window.innerWidth * 0.8;
         const expenseHeight = (50 * expense.length) + 100;
         const incomeHeight = (50 * income.length) + 100;
         return (
-          <>
+          <div className='chart-container' style={{ height: `${expenseHeight + incomeHeight + 400}px` }}>
+            <div class='back-to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <Icon icon='double-chevron-up' size={20}></Icon>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
               <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>
@@ -382,7 +384,7 @@ export default function Home() {
                     {/* months go here */}
                     <div style={{ display: 'flex', marginBottom: 10 }}>
                       <Button text='Select all' onClick={() => selectAll('expense', 'months')} />
-                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />ß
+                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />
                     </div>
                     <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
                       {data.expenseMonths.map((row, i) => (
@@ -435,7 +437,7 @@ export default function Home() {
                 return <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
               })}
             </Recharts.BarChart>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
               <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
               <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('income')}></Icon>
             </div>
@@ -500,7 +502,7 @@ export default function Home() {
                 <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.incomeCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
               ))}
             </Recharts.BarChart>
-          </>
+          </div>
         );
       case '/raw':
         return <Icon icon='build' size={100} />;
@@ -521,7 +523,7 @@ export default function Home() {
         * {
           box-sizing: border-box;
         }
-        .container {
+        .container, .chart-container {
           min-height: 100vh;
           padding: 0 0.5rem;
           display: flex;
@@ -530,6 +532,10 @@ export default function Home() {
           align-items: center;
           background: ${darkMode ? dark : bright};
           color: ${darkMode ? bright : dark};
+        }
+        .chart-container {
+          justify-content: flex-start;
+          padding-top: 120px;
         }
         .navbar {
           width: 100%;
@@ -620,6 +626,19 @@ export default function Home() {
           flex-direction: column;
           justify-content: center;
           align-items: center;
+        }
+        .back-to-top {
+          position: sticky;
+          top: 90%;
+          left: 100%;
+          border: 1px solid #fff;
+          border-radius: 50%;
+          padding: 3px;
+          cursor: pointer;
+          z-index: 1000000;
+        }
+        .back-to-top:hover {
+          filter: opacity(0.5);
         }
       `}</style>
   )

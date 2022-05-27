@@ -369,7 +369,7 @@ export default function Home() {
         const incomeHeight = (50 * income.length) + 100;
         return (
           <div className='chart-container' style={{ height: `${expenseHeight + incomeHeight + 400}px` }}>
-            <div class='back-to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className='back-to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <Icon icon='double-chevron-up' size={20}></Icon>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>

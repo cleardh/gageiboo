@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-// import clientPromise from '../lib/mongodb';
-// import axios from 'axios';
+import clientPromise from '../lib/mongodb';
+import axios from 'axios';
 const XLSX = require('xlsx');
 import * as Recharts from 'recharts';
 import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox } from '@blueprintjs/core';
@@ -15,9 +15,10 @@ import colors from '../utils/colors';
 const green = '#188050';
 const dark = '#30404d';
 const bright = '#f5f5f5';
-export default function Home() {
+export default function Home({ isConnected }) {
   const [page, setPage] = useState('/chart');
   const [darkMode, setDarkMode] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
   const [data, setData] = useState(null);
   const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
   const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
@@ -49,6 +50,17 @@ export default function Home() {
     const converted_date = date.toISOString().split('T')[0];
     return converted_date;
   }
+  const getDataFromDatabase = async () => {
+    try {
+      setLoadingData(true);
+      const transactions = await axios.get('/api/transactions');
+      setLoadingData(false);
+      transactions.data.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']))
+      parseData(transactions.data);
+    } catch (err) {
+      console.log(err);
+    }
+  }
   const getDataFromXlsx = (e) => {
     if (e.target.files.length > 0) {
       const reader = new FileReader();
@@ -65,6 +77,8 @@ export default function Home() {
             rawData = [...rawData, ...parsed_row_object];
           }
         });
+        rawData.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']))
+        axios.post('/api/transactions', rawData);
         parseData(rawData);
       };
       reader.readAsBinaryString(e.target.files[0]);
@@ -77,24 +91,28 @@ export default function Home() {
     const incomeCategories = [];
     let eIndex = 0;
     let iIndex = 0;
-    rawData.forEach(row => {
-      if (row['수입']) {
-        const dataRow = incomeData.find(d => d.month === row['날짜'].substring(0, 7));
-        if (!incomeCategories.find(catObj => catObj.key === row['카테고리'])) incomeCategories.push({ key: row['카테고리'], value: true, color: colors[iIndex++] });
-        if (dataRow) {
-          if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['수입']);
-          return dataRow[row['카테고리']] += parseFloat(row['수입']);
+    rawData.forEach(async row => {
+      try {
+        if (row['수입']) {
+          const dataRow = incomeData.find(d => d.month === row['날짜'].substring(0, 7));
+          if (!incomeCategories.find(catObj => catObj.key === row['카테고리'])) incomeCategories.push({ key: row['카테고리'], value: true, color: colors[iIndex++] });
+          if (dataRow) {
+            if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['수입']);
+            return dataRow[row['카테고리']] += parseFloat(row['수입']);
+          }
+          incomeData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['수입']) });
+          return;
         }
-        incomeData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['수입']) });
-        return;
+        const dataRow = expenseData.find(d => d.month === row['날짜'].substring(0, 7));
+        if (!expenseCategories.find(catObj => catObj.key === row['카테고리'])) expenseCategories.push({ key: row['카테고리'], value: true, color: colors[eIndex++] });
+        if (dataRow) {
+          if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
+          return dataRow[row['카테고리']] += parseFloat(row['지출']);
+        }
+        expenseData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
+      } catch (err) {
+        console.log(err);
       }
-      const dataRow = expenseData.find(d => d.month === row['날짜'].substring(0, 7));
-      if (!expenseCategories.find(catObj => catObj.key === row['카테고리'])) expenseCategories.push({ key: row['카테고리'], value: true, color: colors[eIndex++] });
-      if (dataRow) {
-        if (!dataRow[row['카테고리']]) return dataRow[row['카테고리']] = parseFloat(row['지출']);
-        return dataRow[row['카테고리']] += parseFloat(row['지출']);
-      }
-      expenseData.push({ month: row['날짜'].substring(0, 7), [row['카테고리']]: parseFloat(row['지출']) });
     });
     const expenseMonths = expenseData.map(row => ({ key: row.month, value: true }));
     const incomeMonths = incomeData.map(row => ({ key: row.month, value: true }));
@@ -356,8 +374,14 @@ export default function Home() {
         if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
           return (
             <>
-              <input type='file' hidden id='xlsx' ref={xlsxRef} onChange={getDataFromXlsx} />
-              <Button icon='plus' type='button' large={true} intent={Intent.SUCCESS} onClick={() => xlsxRef.current.click()} />
+              <div style={{ display: loadingData ? 'none' : 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <input type='file' hidden id='xlsx' ref={xlsxRef} onChange={getDataFromXlsx} />
+                <Button icon='plus' type='button' large={true} intent={Intent.SUCCESS} onClick={() => xlsxRef.current.click()} />
+                <Button icon='database' type='button' large={true} intent={Intent.PRIMARY} style={{ marginTop: 20 }} onClick={getDataFromDatabase} />
+              </div>
+              <div style={{ display: loadingData ? 'block' : 'none' }}>
+                <Spinner intent={Intent.PRIMARY} size={75} />
+              </div>
             </>
           );
         }
@@ -650,39 +674,44 @@ export default function Home() {
       </Head>
 
       <main>
-        <Navbar fixedToTop className='navbar'>
-          <Navbar.Group align={Alignment.RIGHT}>
-            <Icon icon='insert' size={IconSize.LARGE} onClick={() => setPage('/')} className='navbar-elements' />
-            <Icon icon='chart' size={IconSize.LARGE} onClick={() => setPage('/chart')} className='navbar-elements' />
-            <Icon icon='th' size={IconSize.LARGE} onClick={() => setPage('/raw')} className='navbar-elements' />
-            <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
-          </Navbar.Group>
-        </Navbar>
-        {renderPage()}
-        {/* <Spinner intent={Intent.WARNING} size={75} /> */}
+        {!isConnected ? (
+          <Spinner intent={Intent.WARNING} size={75} />
+        ) : (
+          <>
+            <Navbar fixedToTop className='navbar'>
+              <Navbar.Group align={Alignment.RIGHT}>
+                <Icon icon='insert' size={IconSize.LARGE} onClick={() => setPage('/')} className='navbar-elements' />
+                <Icon icon='chart' size={IconSize.LARGE} onClick={() => setPage('/chart')} className='navbar-elements' />
+                <Icon icon='th' size={IconSize.LARGE} onClick={() => setPage('/raw')} className='navbar-elements' />
+                <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
+              </Navbar.Group>
+            </Navbar>
+            {renderPage()}
+          </>
+        )}
       </main>
       {globalStyle}
     </div>
   )
 }
 
-// export async function getServerSideProps(context) {
-//   try {
-//     // client.db() will be the default database passed in the MONGODB_URI
-//     // You can change the database by calling the client.db() function and specifying a database like:
-//     // const db = client.db('myDatabase');
-//     // Then you can execute queries against your database like so:
-//     // db.find({}) or any of the MongoDB Node Driver commands
-//     await clientPromise;
-//     return {
-//       props: {
-//         isConnected: true
-//       },
-//     }
-//   } catch (e) {
-//     console.error(e)
-//     return {
-//       props: { isConnected: false },
-//     }
-//   }
-// }
+export async function getServerSideProps(context) {
+  try {
+    // client.db() will be the default database passed in the MONGODB_URI
+    // You can change the database by calling the client.db() function and specifying a database like:
+    // const db = client.db('myDatabase');
+    // Then you can execute queries against your database like so:
+    // db.find({}) or any of the MongoDB Node Driver commands
+    await clientPromise;
+    return {
+      props: {
+        isConnected: true
+      },
+    }
+  } catch (e) {
+    console.error(e)
+    return {
+      props: { isConnected: false },
+    }
+  }
+}

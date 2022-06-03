@@ -4,8 +4,8 @@ import clientPromise from '../lib/mongodb';
 import axios from 'axios';
 const XLSX = require('xlsx');
 import * as Recharts from 'recharts';
-import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox } from '@blueprintjs/core';
-// import { DateInput } from '@blueprintjs/datetime';
+import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox, RadioGroup, Radio } from '@blueprintjs/core';
+import { DateInput } from '@blueprintjs/datetime';
 // import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
@@ -16,14 +16,18 @@ const green = '#188050';
 const dark = '#30404d';
 const bright = '#f5f5f5';
 export default function Home({ isConnected }) {
-  const [page, setPage] = useState('/chart');
+  const [page, setPage] = useState('/');
   const [darkMode, setDarkMode] = useState(true);
+  const [formData, setFormData] = useState({ date: new Date() });
   const [loadingData, setLoadingData] = useState(false);
   const [data, setData] = useState(null);
   const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
   const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
   const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
   const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
+  useEffect(() => {
+    setFormData({ date: new Date() })
+  }, [page]);
   const xlsxRef = useRef(null);
   const isValidSheet = (sheetName) => {
     const sheetNameToLowerCase = sheetName.toLowerCase();
@@ -314,61 +318,79 @@ export default function Home({ isConnected }) {
     });
     return total.toFixed(2);
   }
+  const postData = async () => {
+    const dataToPost = {
+      날짜: `${formData.date.getFullYear()}-${(`0${formData.date.getMonth() + 1}`).slice(-2)}-${(`0${formData.date.getDate()}`).slice(-2)}`,
+      카테고리: formData.category,
+      메모: formData.memo
+    };
+    if (formData.transactionType === '지출') {
+      dataToPost.지출 = formData.amount;
+    } else {
+      dataToPost.수입 = formData.amount;
+    }
+    if (dataToPost.날짜 && dataToPost.카테고리 && (dataToPost.지출 || dataToPost.수입)) {
+      try {
+        // await axios.post('/api/transactions', dataToPost);
+        console.log('Ready to post');
+      } catch (err) {
+        console.log(err);
+      }
+    } else {
+      // Error handling
+      console.log('Form not ready');
+    }
+  }
   const renderPage = () => {
     switch (page) {
       case '/':
         return (
-          <Icon icon='build' size={100} />
-          // <FormGroup>
-          //   <div className='form-input-group'>
-          //     <Label htmlFor='amount' className='labels'>Amount</Label>
-          //     <NumericInput id='amount' inputRef={ref => { if (ref) ref.id = 'amountInput'; }} leftIcon='dollar' onValueChange={(valueAsNumber, valueAsString) => updateFormData('amount', valueAsString)} value={formData.amount} buttonPosition='none' />
-          //   </div>
-          //   <div className='form-input-group'>
-          //     <Label htmlFor='date' className='labels'>Date</Label>
-          //     <DateInput id='date' onChange={selectedDate => updateFormData('date', selectedDate.toLocaleDateString())} value={new Date(formData.date)} formatDate={date => date.toLocaleDateString()} placeholder='MM/DD/YYYY' parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
-          //   </div>
-          //   <div className='form-input-group'>
-          //     <Label htmlFor='type' className='labels'>Type</Label>
-          //     <div className='space-around'>
-          //       <Icon icon='minus' size={IconSize.LARGE} />
-          //       <Switch large checked={formData.type === 'debit'} onChange={setType} />
-          //       <Icon icon='plus' size={IconSize.LARGE} />
-          //     </div>
-          //   </div>
-          //   <div className='form-input-group'>
-          //     <Label htmlFor='location' className='labels'>Location</Label>
-          //     <HTMLSelect onChange={e => updateFormData('location', e.target.value)} value={formData.location}>
-          //       <option value=''></option>
-          //       <option value='sobeys'>Sobeys</option>
-          //       <option value='costco'>Costco</option>
-          //       <option value='walmart'>Walmart</option>
-          //       <option value='canadiantire'>Canadian Tire</option>
-          //     </HTMLSelect>
-          //   </div>
-          //   <div className='form-input-group'>
-          //     <Label htmlFor='category' className='labels'>Category</Label>
-          //     <HTMLSelect onChange={e => updateFormData('category', e.target.value)} value={formData.category}>
-          //       <option value=''></option>
-          //       <option value='food'>Food</option>
-          //       <option value='gas'>Gas</option>
-          //       <option value='toys'>Toys</option>
-          //       <option value='misc'>Miscellaneous</option>
-          //     </HTMLSelect>
-          //   </div>
-          //   <div className='form-input-group'>
-          //     <Label htmlFor='memo' className='labels'>Memo</Label>
-          //     <TextArea
-          //       id='memo'
-          //       growVertically={true}
-          //       intent={Intent.PRIMARY}
-          //       onChange={e => updateFormData('memo', e.target.value)}
-          //       value={formData.memo}
-          //     />
-          //   </div>
-          //   <hr style={{ width: '100%' }} />
-          //   <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
-          // </FormGroup>
+          <FormGroup>
+            <div className='form-input-group'>
+              <Label htmlFor='amount' className='labels'>금액</Label>
+              <NumericInput id='amount' leftIcon='dollar' majorStepSize={10} minorStepSize={0.05}
+                onValueChange={(valueAsNumber, valueAsString) => setFormData({ ...formData, amount: valueAsString })} value={formData.amount}
+                buttonPosition='none' />
+            </div>
+            <RadioGroup
+              inline={true}
+              onChange={e => setFormData({ ...formData, transactionType: e.target.value })}
+              selectedValue={formData.transactionType}
+            >
+              <Radio label='지출' value='지출' />
+              <Radio label='수입' value='수입' />
+            </RadioGroup>
+            <div className='form-input-group'>
+              <Label htmlFor='date' className='labels'>날짜</Label>
+              <DateInput id='date'
+                onChange={selectedDate => setFormData({ ...formData, date: selectedDate })}
+                value={formData.date}
+                formatDate={date => `${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}`} placeholder='YYYY-MM-DD'
+                parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
+            </div>
+            <div className='form-input-group'>
+              <Label htmlFor='location' className='labels'>카테고리</Label>
+              <HTMLSelect onChange={e => setFormData({ ...formData, category: e.target.value })} value={formData.location}>
+                <option value=''></option>
+                <option value='sobeys'>Sobeys</option>
+                <option value='costco'>Costco</option>
+                <option value='walmart'>Walmart</option>
+                <option value='canadiantire'>Canadian Tire</option>
+              </HTMLSelect>
+            </div>
+            <div className='form-input-group'>
+              <Label htmlFor='memo' className='labels'>메모</Label>
+              <TextArea
+                id='memo'
+                growVertically={true}
+                intent={Intent.PRIMARY}
+                onChange={e => setFormData({ ...formData, memo: e.target.value })}
+                value={formData.memo}
+              />
+            </div>
+            <hr style={{ width: '100%' }} />
+            <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
+          </FormGroup >
         );
       case '/chart':
         if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {

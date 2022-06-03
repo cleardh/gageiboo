@@ -6,35 +6,20 @@ export default async function handler(req, res) {
     const db = client.db('gageiboo');
     switch (req.method) {
         case 'POST':
-            const promises = [];
-            promises.push(new Promise(async (resolve, reject) => {
-                try {
-                    await db.collection(collection).deleteMany({});
-                    resolve();
-                } catch (err) {
-                    reject(err);
-                }
-            }));
-            setTimeout(() => {
-                req.body.forEach(row => {
-                    promises.push(new Promise(async (resolve, reject) => {
-                        try {
-                            await db.collection(collection).insertOne(row);
-                            resolve();
-                        } catch (err) {
-                            reject(err);
-                        }
-                    }));
-                });
-            }, 1000);
-            Promise.all(promises).catch(err => {
+            try {
+                await db.collection(collection).insertOne(req.body);
+                res.send('Done');
+            } catch (err) {
                 console.log(err);
-            });
-            res.send('Done');
+            }
             break;
         case 'GET':
-            const transactions = await db.collection(collection).find({}).toArray();
-            res.send(transactions);
+            try {
+                const transactions = await db.collection(collection).find({}).toArray();
+                res.send(transactions);
+            } catch (err) {
+                console.log(err);
+            }
             break;
         default:
             break;

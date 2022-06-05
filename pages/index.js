@@ -4,7 +4,7 @@ import clientPromise from '../lib/mongodb';
 import axios from 'axios';
 const XLSX = require('xlsx');
 import * as Recharts from 'recharts';
-import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox, RadioGroup, Radio } from '@blueprintjs/core';
+import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox, RadioGroup, Radio, Classes } from '@blueprintjs/core';
 import { DateInput } from '@blueprintjs/datetime';
 // import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
 import '@blueprintjs/core/lib/css/blueprint.css';
@@ -18,7 +18,14 @@ const bright = '#f5f5f5';
 export default function Home({ isConnected }) {
   const [page, setPage] = useState('/');
   const [darkMode, setDarkMode] = useState(true);
-  const [formData, setFormData] = useState({ date: new Date() });
+  const [formData, setFormData] = useState({
+    amount: null,
+    date: new Date(),
+    category: '',
+    transactionType: null,
+    memo: '',
+    error: []
+  });
   const [loadingData, setLoadingData] = useState(false);
   const [data, setData] = useState(null);
   const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
@@ -26,7 +33,18 @@ export default function Home({ isConnected }) {
   const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
   const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
   useEffect(() => {
-    setFormData({ date: new Date() })
+    getDataFromDatabase();
+  }, []);
+  useEffect(() => {
+    setFormData({
+      amount: null,
+      date: new Date(),
+      category: '',
+      transactionType: null,
+      memo: '',
+      error: []
+    });
+    if (page === '/chart') getDataFromDatabase();
   }, [page]);
   const xlsxRef = useRef(null);
   const isValidSheet = (sheetName) => {
@@ -319,6 +337,27 @@ export default function Home({ isConnected }) {
     return total.toFixed(2);
   }
   const postData = async () => {
+    let error = [];
+    if (!formData.amount) {
+      error.push('amount');
+    }
+    if (!formData.transactionType) {
+      error.push('transactionType');
+    }
+    if (!formData.date) {
+      error.push('date');
+    }
+    if (!formData.category) {
+      error.push('category');
+    }
+    setFormData({
+      ...formData,
+      error
+    });
+    if (error.length) {
+      console.log('Form not ready');
+      return;
+    }
     const dataToPost = {
       날짜: `${formData.date.getFullYear()}-${(`0${formData.date.getMonth() + 1}`).slice(-2)}-${(`0${formData.date.getDate()}`).slice(-2)}`,
       카테고리: formData.category,
@@ -336,10 +375,16 @@ export default function Home({ isConnected }) {
       } catch (err) {
         console.log(err);
       }
-    } else {
-      // Error handling
-      console.log('Form not ready');
     }
+  }
+  const populateCategories = () => {
+    let categories = data.expenseCategories;
+    if (formData.transactionType === '수입') {
+      categories = data.incomeCategories;
+    }
+    return categories.map((cat, index) => (
+      <option key={index} value={cat.key}>{cat.key}</option>
+    ));
   }
   const renderPage = () => {
     switch (page) {
@@ -348,35 +393,49 @@ export default function Home({ isConnected }) {
           <FormGroup>
             <div className='form-input-group'>
               <Label htmlFor='amount' className='labels'>금액</Label>
-              <NumericInput id='amount' leftIcon='dollar' majorStepSize={10} minorStepSize={0.05}
-                onValueChange={(valueAsNumber, valueAsString) => setFormData({ ...formData, amount: valueAsString })} value={formData.amount}
-                buttonPosition='none' />
+              <div className='error-handling-wrapper'>
+                <NumericInput id='amount' leftIcon='dollar' majorStepSize={10} minorStepSize={0.05}
+                  onValueChange={(valueAsNumber, valueAsString) => setFormData({ ...formData, amount: valueAsString })} value={formData.amount}
+                  buttonPosition='none' />
+                <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('amount') >= 0 ? 'block' : 'none' }}></Icon>
+              </div>
             </div>
-            <RadioGroup
-              inline={true}
-              onChange={e => setFormData({ ...formData, transactionType: e.target.value })}
-              selectedValue={formData.transactionType}
-            >
-              <Radio label='지출' value='지출' />
-              <Radio label='수입' value='수입' />
-            </RadioGroup>
+            <div className='error-handling-wrapper'>
+              <div style={{ width: '100%' }}>
+                <RadioGroup
+                  inline={true}
+                  onChange={e => setFormData({ ...formData, transactionType: e.target.value })}
+                  selectedValue={formData.transactionType}
+                >
+                  <Radio label='지출' value='지출' />
+                  <Radio label='수입' value='수입' />
+                </RadioGroup>
+              </div>
+              <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('transactionType') >= 0 ? 'block' : 'none' }}></Icon>
+            </div>
             <div className='form-input-group'>
               <Label htmlFor='date' className='labels'>날짜</Label>
-              <DateInput id='date'
-                onChange={selectedDate => setFormData({ ...formData, date: selectedDate })}
-                value={formData.date}
-                formatDate={date => `${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}`} placeholder='YYYY-MM-DD'
-                parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
+              <div className='error-handling-wrapper'>
+                <DateInput id='date'
+                  onChange={selectedDate => setFormData({ ...formData, date: selectedDate })}
+                  value={formData.date}
+                  formatDate={date => `${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}`} placeholder='YYYY-MM-DD'
+                  parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
+                <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('date') >= 0 ? 'block' : 'none' }}></Icon>
+              </div>
             </div>
             <div className='form-input-group'>
               <Label htmlFor='location' className='labels'>카테고리</Label>
-              <HTMLSelect onChange={e => setFormData({ ...formData, category: e.target.value })} value={formData.location}>
-                <option value=''></option>
-                <option value='sobeys'>Sobeys</option>
-                <option value='costco'>Costco</option>
-                <option value='walmart'>Walmart</option>
-                <option value='canadiantire'>Canadian Tire</option>
-              </HTMLSelect>
+              <div className='error-handling-wrapper'>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                  <HTMLSelect onChange={e => setFormData({ ...formData, category: e.target.value })} value={formData.category}>
+                    <option value=''></option>
+                    {formData.transactionType && populateCategories()}
+                  </HTMLSelect>
+                </div>
+                <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('category') >= 0 ? 'block' : 'none' }}></Icon>
+              </div>
+              <input type='text' className={Classes.INPUT} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value.toLowerCase() })} />
             </div>
             <div className='form-input-group'>
               <Label htmlFor='memo' className='labels'>메모</Label>
@@ -631,6 +690,7 @@ export default function Home({ isConnected }) {
         }
         .btn-submit, .bp3-html-select {
           width: 200px;
+          height: 40px;
         }
         .btn-submit {
           margin-top: 10px;
@@ -686,6 +746,11 @@ export default function Home({ isConnected }) {
         .back-to-top:hover {
           filter: opacity(0.5);
         }
+        .error-handling-wrapper {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+        }
       `}</style>
   )
   return (
@@ -696,7 +761,7 @@ export default function Home({ isConnected }) {
       </Head>
 
       <main>
-        {!isConnected ? (
+        {!isConnected || !data ? (
           <Spinner intent={Intent.WARNING} size={75} />
         ) : (
           <>

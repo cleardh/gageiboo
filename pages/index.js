@@ -4,13 +4,14 @@ import clientPromise from '../lib/mongodb';
 import axios from 'axios';
 const XLSX = require('xlsx');
 import * as Recharts from 'recharts';
-import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox, RadioGroup, Radio, Classes } from '@blueprintjs/core';
+import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox, RadioGroup, Radio, Classes, Toaster, Position, Toast } from '@blueprintjs/core';
 import { DateInput } from '@blueprintjs/datetime';
 // import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
+import { Cell, Column, EditableCell2, Table2 } from '@blueprintjs/table';
 
 const green = '#188050';
 const dark = '#30404d';
@@ -32,6 +33,14 @@ export default function Home({ isConnected }) {
   const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
   const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
   const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
+  const [cellToEdit, setCellToEdit] = useState({
+    id: null,
+    날짜: null,
+    카테고리: null,
+    지출: null,
+    수입: null,
+    메모: null
+  });
   useEffect(() => {
     getDataFromDatabase();
   }, []);
@@ -77,7 +86,7 @@ export default function Home({ isConnected }) {
       setLoadingData(true);
       const transactions = await axios.get('/api/transactions');
       setLoadingData(false);
-      transactions.data.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']))
+      transactions.data.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']));
       parseData(transactions.data);
     } catch (err) {
       console.log(err);
@@ -145,7 +154,8 @@ export default function Home({ isConnected }) {
       expenseMonths,
       incomeMonths,
       expenseCategories,
-      incomeCategories
+      incomeCategories,
+      raw: rawData
     });
   }
   const filterData = (rawData) => {
@@ -386,21 +396,38 @@ export default function Home({ isConnected }) {
       <option key={index} value={cat.key}>{cat.key}</option>
     ));
   }
+  const errorMessage = (err) => {
+    switch (err) {
+      case 'amount':
+        return '금액을 입력해주세요.';
+      case 'transactionType':
+        return '지출인지 수입인지 입력해주세요.';
+      case 'date':
+        return '날짜를 입력해주세요.';
+      case 'category':
+        return '카테고리를 입력해주세요.';
+      default:
+        break;
+    }
+    return null;
+  }
   const renderPage = () => {
     switch (page) {
       case '/':
         return (
-          <FormGroup>
-            <div className='form-input-group'>
-              <Label htmlFor='amount' className='labels'>금액</Label>
-              <div className='error-handling-wrapper'>
+          <>
+            <Toaster position={Position.TOP} canEscapeKeyClear={true}>
+              {formData.error.map(err => (
+                <Toast key={err} intent={Intent.DANGER} message={errorMessage(err)} icon='warning-sign' onDismiss={() => setFormData({ ...formData, error: formData.error.filter(e => e !== err) })} timeout={5000} />
+              ))}
+            </Toaster>
+            <FormGroup>
+              <div className='form-input-group'>
+                <Label htmlFor='amount' className='labels'>금액</Label>
                 <NumericInput id='amount' leftIcon='dollar' majorStepSize={10} minorStepSize={0.05}
                   onValueChange={(valueAsNumber, valueAsString) => setFormData({ ...formData, amount: valueAsString })} value={formData.amount}
                   buttonPosition='none' />
-                <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('amount') >= 0 ? 'block' : 'none' }}></Icon>
               </div>
-            </div>
-            <div className='error-handling-wrapper'>
               <div style={{ width: '100%' }}>
                 <RadioGroup
                   inline={true}
@@ -411,45 +438,38 @@ export default function Home({ isConnected }) {
                   <Radio label='수입' value='수입' />
                 </RadioGroup>
               </div>
-              <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('transactionType') >= 0 ? 'block' : 'none' }}></Icon>
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='date' className='labels'>날짜</Label>
-              <div className='error-handling-wrapper'>
-                <DateInput id='date'
+              <div className='form-input-group'>
+                <Label htmlFor='date' className='labels'>날짜</Label>
+                <DateInput id='date' leftIcon='dollar'
                   onChange={selectedDate => setFormData({ ...formData, date: selectedDate })}
                   value={formData.date}
                   formatDate={date => `${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}`} placeholder='YYYY-MM-DD'
                   parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
-                <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('date') >= 0 ? 'block' : 'none' }}></Icon>
               </div>
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='location' className='labels'>카테고리</Label>
-              <div className='error-handling-wrapper'>
+              <div className='form-input-group'>
+                <Label htmlFor='location' className='labels'>카테고리</Label>
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                   <HTMLSelect onChange={e => setFormData({ ...formData, category: e.target.value })} value={formData.category}>
                     <option value=''></option>
                     {formData.transactionType && populateCategories()}
                   </HTMLSelect>
                 </div>
-                <Icon icon='arrow-left' size={30} style={{ marginLeft: 10, color: 'red', display: formData.error && formData.error.indexOf('category') >= 0 ? 'block' : 'none' }}></Icon>
+                <input type='text' className={Classes.INPUT} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value.toLowerCase() })} />
               </div>
-              <input type='text' className={Classes.INPUT} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value.toLowerCase() })} />
-            </div>
-            <div className='form-input-group'>
-              <Label htmlFor='memo' className='labels'>메모</Label>
-              <TextArea
-                id='memo'
-                growVertically={true}
-                intent={Intent.PRIMARY}
-                onChange={e => setFormData({ ...formData, memo: e.target.value })}
-                value={formData.memo}
-              />
-            </div>
-            <hr style={{ width: '100%' }} />
-            <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
-          </FormGroup >
+              <div className='form-input-group'>
+                <Label htmlFor='memo' className='labels'>메모</Label>
+                <TextArea
+                  id='memo'
+                  growVertically={true}
+                  intent={Intent.PRIMARY}
+                  onChange={e => setFormData({ ...formData, memo: e.target.value })}
+                  value={formData.memo}
+                />
+              </div>
+              <hr style={{ width: '100%' }} />
+              <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
+            </FormGroup >
+          </>
         );
       case '/chart':
         if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
@@ -610,7 +630,33 @@ export default function Home({ isConnected }) {
           </div>
         );
       case '/raw':
-        return <Icon icon='build' size={100} />;
+        // return <Icon icon='build' size={100} />;
+        return (
+          <div className='spreadsheet'>
+            <Table2 numRows={data.raw.length}>
+              {/* <Column name='날짜' cellRenderer={(rowIndex) => (<EditableCell2>{data.raw[rowIndex].날짜}</EditableCell2>)} /> */}
+              <Column name='날짜' cellRenderer={(rowIndex) => (<EditableCell2 value={data.raw[rowIndex].날짜} onChange={(value) => setData({
+                ...data,
+                // raw: [...data.raw.filter(((r, i) => i !== rowIndex)), { ...data.raw[rowIndex], 날짜: value }]
+                raw: data.raw.map((r, i) => i === rowIndex ? { ...data.raw[rowIndex], 날짜: value } : data.row[rowIndex])
+                // raw: [...data.raw, {
+                //   ...data.raw[rowIndex],
+                //   날짜: value
+                // }]
+                // id: data.raw[rowIndex]._id,
+                // 날짜: data.raw[rowIndex].날짜,
+                // 카테고리: data.raw[rowIndex].카테고리,
+                // 지출: data.raw[rowIndex].지출,
+                // 수입: data.raw[rowIndex].수입,
+                // 메모: data.raw[rowIndex].메모
+              })} />)} />
+              <Column name='카테고리' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].카테고리}</Cell>)} />
+              <Column name='지출' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].지출 ? (data.raw[rowIndex].지출).toFixed(2) : null}</Cell>)} />
+              <Column name='수입' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].수입 ? (data.raw[rowIndex].수입).toFixed(2) : null}</Cell>)} />
+              <Column name='메모' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].메모}</Cell>)} />
+            </Table2>
+          </div >
+        );
       default:
         break;
     }
@@ -746,10 +792,15 @@ export default function Home({ isConnected }) {
         .back-to-top:hover {
           filter: opacity(0.5);
         }
-        .error-handling-wrapper {
+        .spreadsheet {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: fill-available;
           display: flex;
-          justify-content: flex-start;
-          align-items: center;
+          justify-content: center;
+          padding: 40px 0 0;
         }
       `}</style>
   )

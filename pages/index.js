@@ -1,16 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import clientPromise from '../lib/mongodb';
 import axios from 'axios';
-const XLSX = require('xlsx');
-import * as Recharts from 'recharts';
-import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox, RadioGroup, Radio, Classes, Toaster, Position, Toast } from '@blueprintjs/core';
-import { DateInput } from '@blueprintjs/datetime';
+import { Intent, Spinner } from '@blueprintjs/core';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
-import { Cell, Column, Table2 } from '@blueprintjs/table';
+import GlobalNavbar from '../components/Navbar';
 import Form from '../components/Form';
 
 const green = '#188050';
@@ -18,48 +15,13 @@ const dark = '#30404d';
 const bright = '#f5f5f5';
 
 export default function Home({ isConnected }) {
-  const [page, setPage] = useState('/');
   const [darkMode, setDarkMode] = useState(true);
-  const [loadingData, setLoadingData] = useState(false);
   const [data, setData] = useState(null);
-  const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
-  const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
-  const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
-  const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
-  const [updateRowIndex, setUpdateRowIndex] = useState(-1);
-  useEffect(() => {
-    getDataFromDatabase();
-  }, []);
+  const [loadingData, setLoadingData] = useState(false);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (page === '/chart') getDataFromDatabase();
-  }, [page]);
-  const xlsxRef = useRef(null);
-  const isValidSheet = (sheetName) => {
-    const sheetNameToLowerCase = sheetName.toLowerCase();
-    if (
-      sheetNameToLowerCase.indexOf('jan') >= 0 ||
-      sheetNameToLowerCase.indexOf('feb') >= 0 ||
-      sheetNameToLowerCase.indexOf('mar') >= 0 ||
-      sheetNameToLowerCase.indexOf('apr') >= 0 ||
-      sheetNameToLowerCase.indexOf('may') >= 0 ||
-      sheetNameToLowerCase.indexOf('jun') >= 0 ||
-      sheetNameToLowerCase.indexOf('jul') >= 0 ||
-      sheetNameToLowerCase.indexOf('aug') >= 0 ||
-      sheetNameToLowerCase.indexOf('sep') >= 0 ||
-      sheetNameToLowerCase.indexOf('oct') >= 0 ||
-      sheetNameToLowerCase.indexOf('nov') >= 0 ||
-      sheetNameToLowerCase.indexOf('dec') >= 0
-    ) {
-      return true;
-    }
-    return false;
-  }
-  const excelDateToJSDate = (excelDate) => {
-    const date = new Date(Math.round((excelDate - (25567 + 2)) * 86400 * 1000));
-    const converted_date = date.toISOString().split('T')[0];
-    return converted_date;
-  }
+    getDataFromDatabase();
+  }, []);
   const getDataFromDatabase = async () => {
     try {
       setLoadingData(true);
@@ -69,29 +31,6 @@ export default function Home({ isConnected }) {
       parseData(transactions.data);
     } catch (err) {
       console.log(err);
-    }
-  }
-  const getDataFromXlsx = (e) => {
-    if (e.target.files.length > 0) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const data = e.target.result;
-        const rawData = [];
-        const workbook = XLSX.read(data, {
-          type: 'binary'
-        });
-        workbook.SheetNames.forEach(sheetName => {
-          if (isValidSheet(sheetName)) {
-            const XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-            const parsed_row_object = XL_row_object.map(row => ({ ...row, '날짜': excelDateToJSDate(row['날짜']) }));
-            rawData = [...rawData, ...parsed_row_object];
-          }
-        });
-        rawData.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']))
-        axios.post('/api/transactions', rawData);
-        parseData(rawData);
-      };
-      reader.readAsBinaryString(e.target.files[0]);
     }
   }
   const parseData = (rawData) => {
@@ -137,383 +76,8 @@ export default function Home({ isConnected }) {
       raw: rawData
     });
   }
-  const filterData = (rawData) => {
-    const { expenseData, incomeData, expenseMonths, incomeMonths, expenseCategories, incomeCategories } = rawData;
-    const expenseMonthsToFilter = expenseMonths.map(monthObj => monthObj.value && monthObj.key).filter(month => month);
-    const incomeMonthsToFilter = incomeMonths.map(monthObj => monthObj.value && monthObj.key).filter(month => month);
-    const expenseCategoriesToFilter = expenseCategories.map(catObj => catObj.value && catObj.key).filter(category => category);
-    const incomeCategoriesToFilter = incomeCategories.map(catObj => catObj.value && catObj.key).filter(category => category);
-    const expense = expenseData.filter(row => expenseMonthsToFilter.indexOf(row.month) >= 0).map(row => {
-      Object.keys(row).forEach(element => {
-        if (element !== 'month') {
-          if (expenseCategoriesToFilter.indexOf(element) < 0) {
-            return;
-          }
-        }
-      });
-      return row;
-    });
-    const income = incomeData.filter(row => incomeMonthsToFilter.indexOf(row.month) >= 0).map(row => {
-      Object.keys(row).forEach(element => {
-        if (element !== 'month') {
-          if (incomeCategoriesToFilter.indexOf(element) < 0) {
-            return;
-          }
-        }
-      });
-      return row;
-    });
-    return { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter };
-  }
-  const openFilters = (type) => {
-    if (type === 'expense') {
-      setRememberExpenseFilters({
-        expenseMonths: data.expenseMonths,
-        expenseCategories: data.expenseCategories
-      });
-      setDisplayExpenseFilter(true);
-    }
-    if (type === 'income') {
-      setRememberIncomeFilters({
-        incomeMonths: data.incomeMonths,
-        incomeCategories: data.incomeCategories
-      });
-      setDisplayIncomeFilter(true);
-    }
-  }
-  const updateFilter = (type, month, category) => {
-    if (type === 'expense') {
-      if (category) {
-        setData({
-          ...data,
-          expenseCategories: data.expenseCategories.map(catObj => catObj.key === category ? ({ ...catObj, value: !catObj.value }) : catObj)
-        });
-      }
-      if (month) {
-        setData({
-          ...data,
-          expenseMonths: data.expenseMonths.map(monthObj => monthObj.key === month ? ({ ...monthObj, value: !monthObj.value }) : monthObj)
-        });
-      }
-    }
-    if (type === 'income') {
-      if (category) {
-        setData({
-          ...data,
-          incomeCategories: data.incomeCategories.map(catObj => catObj.key === category ? ({ ...catObj, value: !catObj.value }) : catObj)
-        });
-      }
-      if (month) {
-        setData({
-          ...data,
-          incomeMonths: data.incomeMonths.map(monthObj => monthObj.key === month ? ({ ...monthObj, value: !monthObj.value }) : monthObj)
-        });
-      }
-    }
-  };
-  const selectAll = (type, filterType) => {
-    if (type === 'expense') {
-      if (filterType === 'months') {
-        setData({
-          ...data,
-          expenseMonths: data.expenseMonths.map(monthObj => ({ ...monthObj, value: true }))
-        });
-      }
-      if (filterType === 'categories') {
-        setData({
-          ...data,
-          expenseCategories: data.expenseCategories.map(catObj => ({ ...catObj, value: true }))
-        });
-      }
-    }
-    if (type === 'income') {
-      if (filterType === 'months') {
-        setData({
-          ...data,
-          incomeMonths: data.incomeMonths.map(monthObj => ({ ...monthObj, value: true }))
-        });
-      }
-      if (filterType === 'categories') {
-        setData({
-          ...data,
-          incomeCategories: data.incomeCategories.map(catObj => ({ ...catObj, value: true }))
-        });
-      }
-    }
-  }
-  const deSelectAll = (type, filterType) => {
-    if (type === 'expense') {
-      if (filterType === 'months') {
-        setData({
-          ...data,
-          expenseMonths: data.expenseMonths.map(monthObj => ({ ...monthObj, value: false }))
-        });
-      }
-      if (filterType === 'categories') {
-        setData({
-          ...data,
-          expenseCategories: data.expenseCategories.map(catObj => ({ ...catObj, value: false }))
-        });
-      }
-    }
-    if (type === 'income') {
-      if (filterType === 'months') {
-        setData({
-          ...data,
-          incomeMonths: data.incomeMonths.map(monthObj => ({ ...monthObj, value: false }))
-        });
-      }
-      if (filterType === 'categories') {
-        setData({
-          ...data,
-          incomeCategories: data.incomeCategories.map(catObj => ({ ...catObj, value: false }))
-        });
-      }
-    }
-  }
-  const cancelFilters = (type) => {
-    if (type === 'expense') {
-      setData({
-        ...data,
-        expenseMonths: rememberExpenseFilters.expenseMonths,
-        expenseCategories: rememberExpenseFilters.expenseCategories
-      });
-      setDisplayExpenseFilter(false);
-    }
-    if (type === 'income') {
-      setData({
-        ...data,
-        incomeMonths: rememberIncomeFilters.incomeMonths,
-        incomeCategories: rememberIncomeFilters.incomeCategories
-      });
-      setDisplayIncomeFilter(false);
-    }
-  }
-  const CustomBarShape = (props) => {
-    const { fill, x, y, width, height } = props;
-    return (
-      <g>
-        <rect
-          x={x}
-          y={y}
-          width={width}
-          height={height}
-          stroke='none'
-          fill={fill}
-        />
-        {x > 80 && (
-          <rect
-            x={x}
-            y={y}
-            width={5}
-            height={height}
-            stroke='none'
-            fill={darkMode ? dark : bright}
-          />
-        )}
-      </g>
-    );
-  }
-  const getTotal = (type, parsedData, label) => {
-    let total = 0;
-    const categories = type === 'expense' ? data.expenseCategories : data.incomeCategories;
-    const monthObj = parsedData.find(row => row.month === label);
-    if (!monthObj) return;
-    Object.keys(monthObj).forEach(element => {
-      if (element === 'month' || !categories.find(catObj => catObj.key === element).value) return;
-      total += monthObj[element];
-    });
-    return total.toFixed(2);
-  }
-  const exitFromUpdateModal = (updated) => {
-    if (updated) getDataFromDatabase();
-    setUpdateRowIndex(-1);
-  }
   const renderPage = () => {
-    switch (page) {
-      case '/':
-        return <Form data={data} />
-      case '/chart':
-        if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
-          return (
-            <>
-              <div style={{ display: loadingData ? 'none' : 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                <input type='file' hidden id='xlsx' ref={xlsxRef} onChange={getDataFromXlsx} />
-                <Button icon='plus' type='button' large={true} intent={Intent.SUCCESS} onClick={() => xlsxRef.current.click()} />
-                <Button icon='database' type='button' large={true} intent={Intent.PRIMARY} style={{ marginTop: 20 }} onClick={getDataFromDatabase} />
-              </div>
-              <div style={{ display: loadingData ? 'block' : 'none' }}>
-                <Spinner intent={Intent.PRIMARY} size={75} />
-              </div>
-            </>
-          );
-        }
-        // Filters
-        const { expense, income, expenseMonthsToFilter, incomeMonthsToFilter, expenseCategoriesToFilter, incomeCategoriesToFilter } = filterData(data);
-        const stroke = darkMode ? bright : dark;
-        const width = window.innerWidth * 0.8;
-        const expenseHeight = (50 * expense.length) + 100;
-        const incomeHeight = (50 * income.length) + 100;
-        return (
-          <div className='chart-container' style={{ height: `${expenseHeight + incomeHeight + 400}px` }}>
-            <div className='back-to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <Icon icon='double-chevron-up' size={20}></Icon>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
-              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>
-            </div>
-            <Overlay className='overlay' isOpen={displayExpenseFilter}>
-              <div className='overlay'>
-                <span style={{ fontSize: 25 }}>지출</span>
-                <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ width: '45%', height: '100%' }}>
-                    {/* months go here */}
-                    <div style={{ display: 'flex', marginBottom: 10 }}>
-                      <Button text='Select all' onClick={() => selectAll('expense', 'months')} />
-                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />
-                    </div>
-                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
-                      {data.expenseMonths.map((row, i) => (
-                        <Checkbox key={i} checked={row.value} label={row.key}
-                          onChange={() => updateFilter('expense', row.key, null)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ width: '45%', height: '100%' }}>
-                    {/* categories go here */}
-                    <div style={{ display: 'flex', marginBottom: 10 }}>
-                      <Button text='Select all' onClick={() => selectAll('expense', 'categories')} />
-                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'categories')} />
-                    </div>
-                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
-                      {data.expenseCategories.map((row, i) => (
-                        <Checkbox key={i} checked={row.value} label={row.key}
-                          onChange={() => updateFilter('expense', null, row.key)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
-                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayExpenseFilter(false)} />
-                  <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('expense')} />
-                </div>
-              </div>
-            </Overlay>
-            <Recharts.BarChart
-              width={width}
-              height={expenseHeight}
-              layout='vertical'
-              data={expense}
-              margin={{
-                top: 20, right: 30, left: 20, bottom: 5,
-              }}
-            >
-              <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
-              {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
-              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => (
-                <>
-                  <span style={{ fontWeight: 'bold', display: 'block' }}>{label.split('-')[0]}/{label.split('-')[1]}</span>
-                  <span style={{ fontWeight: 'bold', display: 'block', margin: '10px 0' }}>Total: ${getTotal('expense', expense, label)}</span>
-                </>
-              )} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
-              <Recharts.Legend iconType='circle' />
-              {expenseCategoriesToFilter.map((category, i) => {
-                return <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
-              })}
-            </Recharts.BarChart>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
-              <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
-              <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('income')}></Icon>
-            </div>
-            <Overlay className='overlay' isOpen={displayIncomeFilter}>
-              <div className='overlay'>
-                <span style={{ fontSize: 25 }}>수입</span>
-                <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ width: '45%', height: '100%' }}>
-                    {/* months go here */}
-                    <div style={{ display: 'flex', marginBottom: 10 }}>
-                      <Button text='Select all' onClick={() => selectAll('income', 'months')} />
-                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'months')} />
-                    </div>
-                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
-                      {data.incomeMonths.map((row, i) => (
-                        <Checkbox key={i} checked={row.value} label={row.key}
-                          onChange={() => updateFilter('income', row.key, null)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ width: '45%', height: '100%' }}>
-                    {/* categories go here */}
-                    <div style={{ display: 'flex', marginBottom: 10 }}>
-                      <Button text='Select all' onClick={() => selectAll('income', 'categories')} />
-                      <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'categories')} />
-                    </div>
-                    <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
-                      {data.incomeCategories.map((row, i) => (
-                        <Checkbox key={i} checked={row.value} label={row.key}
-                          onChange={() => updateFilter('income', null, row.key)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
-                  <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayIncomeFilter(false)} />
-                  <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('income')} />
-                </div>
-              </div>
-            </Overlay>
-            <Recharts.BarChart
-              width={width}
-              height={incomeHeight}
-              layout='vertical'
-              data={income}
-              margin={{
-                top: 20, right: 30, left: 20, bottom: 5,
-              }}
-            >
-              <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
-              {income && income.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
-              <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => (
-                <>
-                  <span style={{ fontWeight: 'bold', display: 'block' }}>{label.split('-')[0]}/{label.split('-')[1]}</span>
-                  <span style={{ fontWeight: 'bold', display: 'block', margin: '10px 0' }}>Total: ${getTotal('income', income, label)}</span>
-                </>
-              )} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
-              <Recharts.Legend iconType='circle' />
-              {incomeCategoriesToFilter.map((category, i) => (
-                <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.incomeCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
-              ))}
-            </Recharts.BarChart>
-          </div>
-        );
-      case '/raw':
-        return (
-          <div className='spreadsheet'>
-            <Table2 numRows={data.raw.length}>
-              <Column name='날짜' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].날짜}</Cell>)} />
-              <Column name='카테고리' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].카테고리}</Cell>)} />
-              <Column name='지출' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].지출 ? (data.raw[rowIndex].지출).toFixed(2) : null}</Cell>)} />
-              <Column name='수입' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].수입 ? (data.raw[rowIndex].수입).toFixed(2) : null}</Cell>)} />
-              <Column name='메모' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].메모}</Cell>)} />
-              <Column name='' cellRenderer={(rowIndex) => (<Cell className='button-cell'>
-                <Button className='button-update' icon='edit' text='Edit' type='button' intent={Intent.PRIMARY} onClick={() => setUpdateRowIndex(rowIndex)} small={true} />
-              </Cell>)} />
-            </Table2>
-            <Overlay className='overlay' isOpen={updateRowIndex >= 0}>
-              <div className='overlay'>
-                <Form data={data} updateData={data.raw[updateRowIndex]} exit={(updated) => exitFromUpdateModal(updated)} />
-              </div>
-            </Overlay>
-          </div >
-        );
-      default:
-        break;
-    }
+    return <Form data={data} />
   }
   const globalStyle = (
     <style jsx global>{`
@@ -675,18 +239,11 @@ export default function Home({ isConnected }) {
       </Head>
 
       <main>
-        {!isConnected || !data ? (
-          <Spinner intent={Intent.WARNING} size={75} />
+        {!isConnected || loadingData ? (
+          <Spinner intent={Intent.NONE} size={75} />
         ) : (
           <>
-            <Navbar fixedToTop className='navbar'>
-              <Navbar.Group align={Alignment.RIGHT}>
-                <Icon icon='insert' size={IconSize.LARGE} onClick={() => setPage('/')} className='navbar-elements' />
-                <Icon icon='chart' size={IconSize.LARGE} onClick={() => setPage('/chart')} className='navbar-elements' />
-                <Icon icon='th' size={IconSize.LARGE} onClick={() => setPage('/raw')} className='navbar-elements' />
-                <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
-              </Navbar.Group>
-            </Navbar>
+            <GlobalNavbar toggleDarkMode={() => setDarkMode(!darkMode)} />
             {renderPage()}
           </>
         )}

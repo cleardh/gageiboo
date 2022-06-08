@@ -112,9 +112,9 @@ const Form = ({ data, updateData, exit }) => {
                     const dataToUpdate = { _id: updateData._id, ...dataToPost };
                     await axios.put('/api/transactions', dataToUpdate);
                     exit(true);
+                    return;
                 }
-                // await axios.post('/api/transactions', dataToPost);
-                console.log('Ready to post', dataToPost);
+                await axios.post('/api/transactions', dataToPost);
                 resetForm();
             } catch (err) {
                 console.log(err);

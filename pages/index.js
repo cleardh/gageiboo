@@ -31,6 +31,7 @@ export default function Home({ isConnected }) {
     getDataFromDatabase();
   }, []);
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (page === '/chart') getDataFromDatabase();
   }, [page]);
   const xlsxRef = useRef(null);

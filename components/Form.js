@@ -46,8 +46,8 @@ const Form = ({ data, updateData, exit }) => {
         });
     }
     const parseDate = dateStr => {
-        const now = dateStr ? new Date(dateStr) : new Date();
-        const dateObj = new Date(`${now.getUTCFullYear()}-${now.getUTCMonth() + 1}-${now.getUTCDate()} 00:00:00`);
+        const date = dateStr ? new Date(dateStr) : new Date();
+        const dateObj = new Date(`${date.getUTCFullYear()}-${(`0${date.getUTCMonth() + 1}`).slice(-2)}-${(`0${date.getUTCDate()}`).slice(-2)}T00:00:00`);
         return dateObj;
     }
     const errorMessage = (err) => {

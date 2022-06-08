@@ -324,6 +324,10 @@ export default function Home({ isConnected }) {
     });
     return total.toFixed(2);
   }
+  const exitFromUpdateModal = (updated) => {
+    if (updated) getDataFromDatabase();
+    setUpdateRowIndex(-1);
+  }
   const renderPage = () => {
     switch (page) {
       case '/':
@@ -496,12 +500,12 @@ export default function Home({ isConnected }) {
               <Column name='수입' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].수입 ? (data.raw[rowIndex].수입).toFixed(2) : null}</Cell>)} />
               <Column name='메모' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].메모}</Cell>)} />
               <Column name='' cellRenderer={(rowIndex) => (<Cell className='button-cell'>
-                <Button className='button-update' icon='edit' text='Edit' type='button' intent={Intent.SUCCESS} onClick={() => setUpdateRowIndex(rowIndex)} small={true} />
+                <Button className='button-update' icon='edit' text='Edit' type='button' intent={Intent.PRIMARY} onClick={() => setUpdateRowIndex(rowIndex)} small={true} />
               </Cell>)} />
             </Table2>
             <Overlay className='overlay' isOpen={updateRowIndex >= 0}>
               <div className='overlay'>
-                <Form data={data} updateData={data.raw[updateRowIndex]} exit={() => setUpdateRowIndex(-1)} />
+                <Form data={data} updateData={data.raw[updateRowIndex]} exit={(updated) => exitFromUpdateModal(updated)} />
               </div>
             </Overlay>
           </div >

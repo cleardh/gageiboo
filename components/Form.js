@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Button, FormGroup, HTMLSelect, Label, NumericInput, Position, Radio, RadioGroup, TextArea, Toast, Toaster, Classes, Intent } from '@blueprintjs/core';
 import { DateInput } from '@blueprintjs/datetime';
+import axios from 'axios';
+import moment from 'moment';
 
+let deleteDataMessageTimeout;
+let doubleClick = false;
 const Form = ({ data, updateData, exit }) => {
     useEffect(() => {
+        doubleClick = false;
+        resetForm();
         if (updateData) {
             const amount = updateData.지출 || updateData.수입;
-            const date = new Date(updateData.날짜);
+            const date = parseDate(updateData.날짜);
             const category = updateData.카테고리;
             const transactionType = updateData.지출 ? '지출' : '수입';
             const memo = updateData.메모;
@@ -21,13 +27,29 @@ const Form = ({ data, updateData, exit }) => {
         }
     }, []);
     const [formData, setFormData] = useState({
-        amount: null,
-        date: new Date(),
+        amount: '',
+        date: null,
         category: '',
         transactionType: null,
         memo: '',
         error: []
     });
+    const [deleteDataMessage, setDeleteDataMessage] = useState('');
+    const resetForm = () => {
+        setFormData({
+            amount: '',
+            date: parseDate(),
+            category: '',
+            transactionType: null,
+            memo: '',
+            error: []
+        });
+    }
+    const parseDate = dateStr => {
+        const now = dateStr ? new Date(dateStr) : new Date();
+        const dateObj = new Date(`${now.getUTCFullYear()}-${now.getUTCMonth() + 1}-${now.getUTCDate()} 00:00:00`);
+        return dateObj;
+    }
     const errorMessage = (err) => {
         switch (err) {
             case 'amount':
@@ -80,25 +102,38 @@ const Form = ({ data, updateData, exit }) => {
             메모: formData.memo
         };
         if (formData.transactionType === '지출') {
-            dataToPost.지출 = parseFloat(formData.amount);
+            dataToPost.지출 = parseFloat(parseFloat(formData.amount).toFixed(2));
         } else {
-            dataToPost.수입 = parseFloat(formData.amount);
+            dataToPost.수입 = parseFloat(parseFloat(formData.amount).toFixed(2));
         }
         if (dataToPost.날짜 && dataToPost.카테고리 && (dataToPost.지출 || dataToPost.수입)) {
             try {
                 if (updateData) {
-                    console.log(updateData);
+                    const dataToUpdate = { _id: updateData._id, ...dataToPost };
+                    await axios.put('/api/transactions', dataToUpdate);
+                    exit(true);
                 }
                 // await axios.post('/api/transactions', dataToPost);
-                console.log('Ready to post');
+                console.log('Ready to post', dataToPost);
+                resetForm();
             } catch (err) {
                 console.log(err);
             }
         }
-        console.log(dataToPost);
     }
-    const deleteData = () => {
-        console.log('deleting data');
+    const deleteData = async () => {
+        if (deleteDataMessageTimeout) {
+            doubleClick = true;
+            clearTimeout(deleteDataMessageTimeout);
+            setDeleteDataMessage('');
+        }
+        await axios.delete('/api/transactions', { data: { _id: updateData._id } });
+        exit(true);
+    }
+    const showDeleteDataMessage = () => {
+        deleteDataMessageTimeout = setTimeout(() => {
+            if (!doubleClick) setDeleteDataMessage('더블클릭으로 지워주세용.');
+        }, 500);
     }
     return (
         <>
@@ -129,8 +164,8 @@ const Form = ({ data, updateData, exit }) => {
                     <DateInput id='date' leftIcon='dollar'
                         onChange={selectedDate => setFormData({ ...formData, date: selectedDate })}
                         value={formData.date}
-                        formatDate={date => `${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}`} placeholder='YYYY-MM-DD'
-                        parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
+                        formatDate={date => moment(date).format('YYYY-MM-DD')}
+                        placeholder='YYYY-MM-DD' parseDate={str => parseDate(str)} showActionsBar={true} todayButtonText='Today' />
                 </div>
                 <div className='form-input-group'>
                     <Label htmlFor='location' className='labels'>카테고리</Label>
@@ -155,8 +190,13 @@ const Form = ({ data, updateData, exit }) => {
                 <hr style={{ width: '100%' }} />
                 {updateData ? (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Toaster position={Position.TOP} canEscapeKeyClear={true}>
+                            {deleteDataMessage && (
+                                <Toast intent={Intent.PRIMARY} message={deleteDataMessage} icon='hand' onDismiss={() => setDeleteDataMessage('')} timeout={5000} />
+                            )}
+                        </Toaster>
                         <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
-                        <Button icon='trash' className='btn-submit' text='Delete' type='button' intent={Intent.DANGER} onDoubleClick={deleteData} />
+                        <Button icon='trash' className='btn-submit' text='Delete' type='button' intent={Intent.DANGER} onClick={showDeleteDataMessage} onDoubleClick={deleteData} />
                         <Button icon='reset' className='btn-submit' text='Cancel' type='button' intent={Intent.NONE} onClick={exit} />
                     </div>
                 ) : (

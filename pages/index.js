@@ -6,53 +6,31 @@ const XLSX = require('xlsx');
 import * as Recharts from 'recharts';
 import { Intent, Spinner, Navbar, Icon, IconSize, FormGroup, NumericInput, Label, Alignment, Button, Switch, Dialog, HTMLSelect, TextArea, HotkeysProvider, Overlay, Checkbox, RadioGroup, Radio, Classes, Toaster, Position, Toast } from '@blueprintjs/core';
 import { DateInput } from '@blueprintjs/datetime';
-// import { Table2, EditableCell2, Column, Cell } from '@blueprintjs/table';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
-import { Cell, Column, EditableCell2, Table2 } from '@blueprintjs/table';
+import { Cell, Column, Table2 } from '@blueprintjs/table';
+import Form from '../components/Form';
 
 const green = '#188050';
 const dark = '#30404d';
 const bright = '#f5f5f5';
+
 export default function Home({ isConnected }) {
   const [page, setPage] = useState('/');
   const [darkMode, setDarkMode] = useState(true);
-  const [formData, setFormData] = useState({
-    amount: null,
-    date: new Date(),
-    category: '',
-    transactionType: null,
-    memo: '',
-    error: []
-  });
   const [loadingData, setLoadingData] = useState(false);
   const [data, setData] = useState(null);
   const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
   const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
   const [displayExpenseFilter, setDisplayExpenseFilter] = useState(false);
   const [displayIncomeFilter, setDisplayIncomeFilter] = useState(false);
-  const [cellToEdit, setCellToEdit] = useState({
-    id: null,
-    날짜: null,
-    카테고리: null,
-    지출: null,
-    수입: null,
-    메모: null
-  });
+  const [updateRowIndex, setUpdateRowIndex] = useState(-1);
   useEffect(() => {
     getDataFromDatabase();
   }, []);
   useEffect(() => {
-    setFormData({
-      amount: null,
-      date: new Date(),
-      category: '',
-      transactionType: null,
-      memo: '',
-      error: []
-    });
     if (page === '/chart') getDataFromDatabase();
   }, [page]);
   const xlsxRef = useRef(null);
@@ -346,131 +324,10 @@ export default function Home({ isConnected }) {
     });
     return total.toFixed(2);
   }
-  const postData = async () => {
-    let error = [];
-    if (!formData.amount) {
-      error.push('amount');
-    }
-    if (!formData.transactionType) {
-      error.push('transactionType');
-    }
-    if (!formData.date) {
-      error.push('date');
-    }
-    if (!formData.category) {
-      error.push('category');
-    }
-    setFormData({
-      ...formData,
-      error
-    });
-    if (error.length) {
-      console.log('Form not ready');
-      return;
-    }
-    const dataToPost = {
-      날짜: `${formData.date.getFullYear()}-${(`0${formData.date.getMonth() + 1}`).slice(-2)}-${(`0${formData.date.getDate()}`).slice(-2)}`,
-      카테고리: formData.category,
-      메모: formData.memo
-    };
-    if (formData.transactionType === '지출') {
-      dataToPost.지출 = formData.amount;
-    } else {
-      dataToPost.수입 = formData.amount;
-    }
-    if (dataToPost.날짜 && dataToPost.카테고리 && (dataToPost.지출 || dataToPost.수입)) {
-      try {
-        // await axios.post('/api/transactions', dataToPost);
-        console.log('Ready to post');
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  }
-  const populateCategories = () => {
-    let categories = data.expenseCategories;
-    if (formData.transactionType === '수입') {
-      categories = data.incomeCategories;
-    }
-    return categories.map((cat, index) => (
-      <option key={index} value={cat.key}>{cat.key}</option>
-    ));
-  }
-  const errorMessage = (err) => {
-    switch (err) {
-      case 'amount':
-        return '금액을 입력해주세요.';
-      case 'transactionType':
-        return '지출인지 수입인지 입력해주세요.';
-      case 'date':
-        return '날짜를 입력해주세요.';
-      case 'category':
-        return '카테고리를 입력해주세요.';
-      default:
-        break;
-    }
-    return null;
-  }
   const renderPage = () => {
     switch (page) {
       case '/':
-        return (
-          <>
-            <Toaster position={Position.TOP} canEscapeKeyClear={true}>
-              {formData.error.map(err => (
-                <Toast key={err} intent={Intent.DANGER} message={errorMessage(err)} icon='warning-sign' onDismiss={() => setFormData({ ...formData, error: formData.error.filter(e => e !== err) })} timeout={5000} />
-              ))}
-            </Toaster>
-            <FormGroup>
-              <div className='form-input-group'>
-                <Label htmlFor='amount' className='labels'>금액</Label>
-                <NumericInput id='amount' leftIcon='dollar' majorStepSize={10} minorStepSize={0.05}
-                  onValueChange={(valueAsNumber, valueAsString) => setFormData({ ...formData, amount: valueAsString })} value={formData.amount}
-                  buttonPosition='none' />
-              </div>
-              <div style={{ width: '100%' }}>
-                <RadioGroup
-                  inline={true}
-                  onChange={e => setFormData({ ...formData, transactionType: e.target.value })}
-                  selectedValue={formData.transactionType}
-                >
-                  <Radio label='지출' value='지출' />
-                  <Radio label='수입' value='수입' />
-                </RadioGroup>
-              </div>
-              <div className='form-input-group'>
-                <Label htmlFor='date' className='labels'>날짜</Label>
-                <DateInput id='date' leftIcon='dollar'
-                  onChange={selectedDate => setFormData({ ...formData, date: selectedDate })}
-                  value={formData.date}
-                  formatDate={date => `${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}`} placeholder='YYYY-MM-DD'
-                  parseDate={str => new Date(str)} showActionsBar={true} todayButtonText='Today' />
-              </div>
-              <div className='form-input-group'>
-                <Label htmlFor='location' className='labels'>카테고리</Label>
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                  <HTMLSelect onChange={e => setFormData({ ...formData, category: e.target.value })} value={formData.category}>
-                    <option value=''></option>
-                    {formData.transactionType && populateCategories()}
-                  </HTMLSelect>
-                </div>
-                <input type='text' className={Classes.INPUT} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value.toLowerCase() })} />
-              </div>
-              <div className='form-input-group'>
-                <Label htmlFor='memo' className='labels'>메모</Label>
-                <TextArea
-                  id='memo'
-                  growVertically={true}
-                  intent={Intent.PRIMARY}
-                  onChange={e => setFormData({ ...formData, memo: e.target.value })}
-                  value={formData.memo}
-                />
-              </div>
-              <hr style={{ width: '100%' }} />
-              <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
-            </FormGroup >
-          </>
-        );
+        return <Form data={data} />
       case '/chart':
         if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
           return (
@@ -502,7 +359,7 @@ export default function Home({ isConnected }) {
               <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>
             </div>
             <Overlay className='overlay' isOpen={displayExpenseFilter}>
-              <div className='overlay-filter'>
+              <div className='overlay'>
                 <span style={{ fontSize: 25 }}>지출</span>
                 <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
                   <div style={{ width: '45%', height: '100%' }}>
@@ -567,7 +424,7 @@ export default function Home({ isConnected }) {
               <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('income')}></Icon>
             </div>
             <Overlay className='overlay' isOpen={displayIncomeFilter}>
-              <div className='overlay-filter'>
+              <div className='overlay'>
                 <span style={{ fontSize: 25 }}>수입</span>
                 <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
                   <div style={{ width: '45%', height: '100%' }}>
@@ -630,31 +487,23 @@ export default function Home({ isConnected }) {
           </div>
         );
       case '/raw':
-        // return <Icon icon='build' size={100} />;
         return (
           <div className='spreadsheet'>
             <Table2 numRows={data.raw.length}>
-              {/* <Column name='날짜' cellRenderer={(rowIndex) => (<EditableCell2>{data.raw[rowIndex].날짜}</EditableCell2>)} /> */}
-              <Column name='날짜' cellRenderer={(rowIndex) => (<EditableCell2 value={data.raw[rowIndex].날짜} onChange={(value) => setData({
-                ...data,
-                // raw: [...data.raw.filter(((r, i) => i !== rowIndex)), { ...data.raw[rowIndex], 날짜: value }]
-                raw: data.raw.map((r, i) => i === rowIndex ? { ...data.raw[rowIndex], 날짜: value } : data.row[rowIndex])
-                // raw: [...data.raw, {
-                //   ...data.raw[rowIndex],
-                //   날짜: value
-                // }]
-                // id: data.raw[rowIndex]._id,
-                // 날짜: data.raw[rowIndex].날짜,
-                // 카테고리: data.raw[rowIndex].카테고리,
-                // 지출: data.raw[rowIndex].지출,
-                // 수입: data.raw[rowIndex].수입,
-                // 메모: data.raw[rowIndex].메모
-              })} />)} />
+              <Column name='날짜' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].날짜}</Cell>)} />
               <Column name='카테고리' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].카테고리}</Cell>)} />
               <Column name='지출' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].지출 ? (data.raw[rowIndex].지출).toFixed(2) : null}</Cell>)} />
               <Column name='수입' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].수입 ? (data.raw[rowIndex].수입).toFixed(2) : null}</Cell>)} />
               <Column name='메모' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].메모}</Cell>)} />
+              <Column name='' cellRenderer={(rowIndex) => (<Cell className='button-cell'>
+                <Button className='button-update' icon='edit' text='Edit' type='button' intent={Intent.SUCCESS} onClick={() => setUpdateRowIndex(rowIndex)} small={true} />
+              </Cell>)} />
             </Table2>
+            <Overlay className='overlay' isOpen={updateRowIndex >= 0}>
+              <div className='overlay'>
+                <Form data={data} updateData={data.raw[updateRowIndex]} exit={() => setUpdateRowIndex(-1)} />
+              </div>
+            </Overlay>
           </div >
         );
       default:
@@ -766,7 +615,7 @@ export default function Home({ isConnected }) {
             transform: translate3d(4px, 0, 0);
           }
         }
-        .overlay-filter {
+        .overlay {
           width: 50%;
           height: 50%;
           position: fixed;
@@ -801,6 +650,15 @@ export default function Home({ isConnected }) {
           display: flex;
           justify-content: center;
           padding: 40px 0 0;
+        }
+        .button-cell {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .button-update {
+          width: 100px;
+          transform: scale(0.7);
         }
       `}</style>
   )

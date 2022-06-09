@@ -6,7 +6,7 @@ export default async function handler(req, res) {
         case 'GET':
             try {
                 const backupPath = path.join(__dirname, '../../../../gageiboo_backup.xlsx');
-                if (!fs.existsSync(backupPath)) res.send('Not found');
+                if (!fs.existsSync(backupPath)) return res.send('Not found');
                 const stat = fs.statSync(backupPath);
                 res.writeHead(200, {
                     'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

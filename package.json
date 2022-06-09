@@ -13,6 +13,7 @@
     "@blueprintjs/select": "^3.18.11",
     "@blueprintjs/table": "^3.9.13",
     "axios": "^0.25.0",
+    "crypto-js": "^4.1.1",
     "moment": "^2.29.3",
     "mongodb": "^4.1.3",
     "next": "latest",

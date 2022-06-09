@@ -32,7 +32,8 @@ const Form = ({ data, updateData, exit }) => {
         category: '',
         transactionType: null,
         memo: '',
-        error: []
+        error: [],
+        success: false
     });
     const [deleteDataMessage, setDeleteDataMessage] = useState('');
     const resetForm = () => {
@@ -42,7 +43,8 @@ const Form = ({ data, updateData, exit }) => {
             category: '',
             transactionType: null,
             memo: '',
-            error: []
+            error: [],
+            success: false
         });
     }
     const parseDate = dateStr => {
@@ -115,7 +117,10 @@ const Form = ({ data, updateData, exit }) => {
                     return;
                 }
                 await axios.post('/api/transactions', dataToPost);
-                resetForm();
+                setFormData({
+                    ...formData,
+                    success: true
+                });
             } catch (err) {
                 console.log(err);
             }
@@ -141,6 +146,9 @@ const Form = ({ data, updateData, exit }) => {
                 {formData.error.map(err => (
                     <Toast key={err} intent={Intent.DANGER} message={errorMessage(err)} icon='warning-sign' onDismiss={() => setFormData({ ...formData, error: formData.error.filter(e => e !== err) })} timeout={5000} />
                 ))}
+                {formData.success && (
+                    <Toast intent={Intent.SUCCESS} message='입력완료!' icon='tick-circle' onDismiss={resetForm} timeout={3000} />
+                )}
             </Toaster>
             <FormGroup>
                 <div className='form-input-group'>

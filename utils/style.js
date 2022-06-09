@@ -1,8 +1,8 @@
 const globalStyle = (darkMode) => {
-    const green = '#188050';
-    const dark = '#30404d';
-    const bright = '#f5f5f5';
-    return <style jsx global>{`
+  const green = '#188050';
+  const dark = '#30404d';
+  const bright = '#f5f5f5';
+  return <style jsx global>{`
         html,
         body {
           padding: 0;

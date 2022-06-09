@@ -2,19 +2,21 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import clientPromise from '../lib/mongodb';
 import axios from 'axios';
-import { Intent, Spinner } from '@blueprintjs/core';
+import { Intent, Spinner, Icon, Button, Overlay } from '@blueprintjs/core';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
+import { Cell, Column, Table2 } from '@blueprintjs/table';
 import GlobalNavbar from '../components/Navbar';
 import Form from '../components/Form';
 import globalStyle from '../utils/style';
 
-export default function Home({ isConnected }) {
+export default function Raw({ isConnected }) {
   const [darkMode, setDarkMode] = useState(true);
   const [data, setData] = useState(null);
   const [loadingData, setLoadingData] = useState(false);
+  const [updateRowIndex, setUpdateRowIndex] = useState(-1);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     getDataFromDatabase();
@@ -73,8 +75,38 @@ export default function Home({ isConnected }) {
       raw: rawData
     });
   }
+  const exitFromUpdateModal = (updated) => {
+    if (updated) getDataFromDatabase();
+    setUpdateRowIndex(-1);
+  }
   const renderPage = () => {
-    return <Form data={data} />
+    if (!data || !data.raw || !data.raw.length) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <Icon icon='ban-circle' size={20} style={{ marginBottom: 20 }}></Icon>
+          No Data Found
+        </div>
+      );
+    }
+    return (
+      <div className='spreadsheet'>
+        <Table2 numRows={data.raw.length}>
+          <Column name='날짜' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].날짜}</Cell>)} />
+          <Column name='카테고리' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].카테고리}</Cell>)} />
+          <Column name='지출' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].지출 ? (data.raw[rowIndex].지출).toFixed(2) : null}</Cell>)} />
+          <Column name='수입' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].수입 ? (data.raw[rowIndex].수입).toFixed(2) : null}</Cell>)} />
+          <Column name='메모' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].메모}</Cell>)} />
+          <Column name='' cellRenderer={(rowIndex) => (<Cell className='button-cell'>
+            <Button className='button-update' icon='edit' text='Edit' type='button' intent={Intent.PRIMARY} onClick={() => setUpdateRowIndex(rowIndex)} small={true} />
+          </Cell>)} />
+        </Table2>
+        <Overlay className='overlay' isOpen={updateRowIndex >= 0}>
+          <div className='overlay'>
+            <Form data={data} updateData={data.raw[updateRowIndex]} exit={(updated) => exitFromUpdateModal(updated)} />
+          </div>
+        </Overlay>
+      </div >
+    );
   }
   return (
     <div className='container'>

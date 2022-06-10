@@ -7,14 +7,19 @@ import globalStyle from '../utils/style';
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
     const router = useRouter();
     const [darkMode, setDarkMode] = useState(true);
-    useEffect(() => {
-        if (['Home', 'Error'].indexOf(Component.name) < 0 && !pageProps.user) router.push('/');
-    }, [Component]);
+    // useEffect(() => {
+    //     if (['Home', 'Error'].indexOf(Component.name) < 0 && !pageProps.user) router.push('/');
+    // }, [Component]);
     return (
-        <SessionProvider session={session}>
+        // <SessionProvider session={session}>
+        //     <GlobalNavbar darkMode={darkMode} setDarkMode={setDarkMode} user={pageProps.user} signOut={signOut} />
+        //     <Component {...pageProps} darkMode={darkMode} />
+        //     {globalStyle(darkMode)}
+        // </SessionProvider>
+        <>
             <GlobalNavbar darkMode={darkMode} setDarkMode={setDarkMode} user={pageProps.user} signOut={signOut} />
             <Component {...pageProps} darkMode={darkMode} />
             {globalStyle(darkMode)}
-        </SessionProvider>
+        </>
     );
 }

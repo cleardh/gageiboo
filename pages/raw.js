@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import clientPromise from '../lib/mongodb';
 import axios from 'axios';
-import { Intent, Spinner, Icon, Button, Overlay } from '@blueprintjs/core';
+import { Intent, Icon, Button, Overlay } from '@blueprintjs/core';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
@@ -11,6 +11,7 @@ import { Cell, Column, Table2 } from '@blueprintjs/table';
 import GlobalNavbar from '../components/Navbar';
 import Form from '../components/Form';
 import globalStyle from '../utils/style';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function Raw({ isConnected }) {
   const [darkMode, setDarkMode] = useState(true);
@@ -117,7 +118,7 @@ export default function Raw({ isConnected }) {
 
       <main>
         {!isConnected || loadingData ? (
-          <Spinner intent={Intent.NONE} size={75} />
+          <LoadingSpinner />
         ) : (
           <>
             <GlobalNavbar toggleDarkMode={() => setDarkMode(!darkMode)} />

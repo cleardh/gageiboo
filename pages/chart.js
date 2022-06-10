@@ -3,13 +3,14 @@ import Head from 'next/head';
 import clientPromise from '../lib/mongodb';
 import axios from 'axios';
 import * as Recharts from 'recharts';
-import { Intent, Spinner, Icon, Label, Button, Overlay, Checkbox } from '@blueprintjs/core';
+import { Intent, Icon, Label, Button, Overlay, Checkbox } from '@blueprintjs/core';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
 import GlobalNavbar from '../components/Navbar';
 import globalStyle from '../utils/style';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const dark = '#30404d';
 const bright = '#f5f5f5';
@@ -429,7 +430,7 @@ export default function Chart({ isConnected }) {
 
             <main>
                 {!isConnected || loadingData ? (
-                    <Spinner intent={Intent.NONE} size={75} />
+                    <LoadingSpinner />
                 ) : (
                     <>
                         <GlobalNavbar toggleDarkMode={() => setDarkMode(!darkMode)} />

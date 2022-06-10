@@ -8,12 +8,14 @@ import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
+import GlobalNavbar from '../components/Navbar';
+import globalStyle from '../utils/style';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getSession } from 'next-auth/react';
 
 const dark = '#30404d';
 const bright = '#f5f5f5';
-export default function Chart({ isConnected, darkMode }) {
+export default function Chart({ isConnected }) {
+    const [darkMode, setDarkMode] = useState(true);
     const [data, setData] = useState(null);
     const [loadingData, setLoadingData] = useState(false);
     const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
@@ -429,30 +431,30 @@ export default function Chart({ isConnected, darkMode }) {
             <main>
                 {!isConnected || loadingData ? (
                     <LoadingSpinner />
-                ) : renderPage()}
+                ) : (
+                    <>
+                        <GlobalNavbar toggleDarkMode={() => setDarkMode(!darkMode)} />
+                        {renderPage()}
+                    </>
+                )}
             </main>
+            {globalStyle(darkMode)}
         </div>
     )
 }
 
 export async function getServerSideProps(context) {
-    let pageProps = {
-        props: {
-            isConnected: false,
-            user: null
-        }
-    };
     try {
         await clientPromise;
-        pageProps.props.isConnected = true;
+        return {
+            props: {
+                isConnected: true
+            },
+        }
     } catch (e) {
-        console.error(e);
+        console.error(e)
+        return {
+            props: { isConnected: false },
+        }
     }
-    try {
-        const session = await getSession(context);
-        if (session) pageProps.props.user = session.user;
-    } catch (e) {
-        console.error(e);
-    }
-    return pageProps;
 }

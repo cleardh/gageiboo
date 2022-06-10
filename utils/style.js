@@ -38,7 +38,7 @@ const globalStyle = (darkMode) => {
           display: flex;
           justify-content: flex-end;
           align-items: center;
-          padding-right: 5%;
+          padding-right: 100px;
           color: ${bright};
         }
         .navbar-elements {
@@ -51,14 +51,6 @@ const globalStyle = (darkMode) => {
         }
         .navbar-tooltip {
           top: 50px;
-        }
-        .button-signin {
-          width: 100px;
-          height: 100px;
-          cursor: pointer;
-        }
-        .button-signin:hover {
-          filter: opacity(0.5);
         }
         .dialog-content {
           display: flex;

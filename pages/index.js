@@ -1,9 +1,11 @@
 import React from 'react';
+import { Router, useRouter } from 'next/router';
 import Head from 'next/head';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import { signIn } from 'next-auth/react';
 
 export default function Home() {
+  const router = useRouter();
   return (
     <div className='container'>
       <Head>
@@ -12,7 +14,8 @@ export default function Home() {
       </Head>
 
       <main>
-        <div className='button-signin' onClick={() => signIn('google', { callbackUrl: 'http://localhost:3005/add' })}>
+        <div className='button-signin' onClick={() => router.push('/add')}>
+          {/* <div className='button-signin' onClick={() => signIn('google', { callbackUrl: 'http://localhost:3005/add' })}> */}
           <svg
             data-name="Layer 1"
             id="Layer_1"

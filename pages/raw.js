@@ -8,13 +8,11 @@ import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
 import { Cell, Column, Table2 } from '@blueprintjs/table';
-import GlobalNavbar from '../components/Navbar';
 import Form from '../components/Form';
-import globalStyle from '../utils/style';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getSession } from 'next-auth/react';
 
 export default function Raw({ isConnected }) {
-  const [darkMode, setDarkMode] = useState(true);
   const [data, setData] = useState(null);
   const [loadingData, setLoadingData] = useState(false);
   const [updateRowIndex, setUpdateRowIndex] = useState(-1);
@@ -119,30 +117,30 @@ export default function Raw({ isConnected }) {
       <main>
         {!isConnected || loadingData ? (
           <LoadingSpinner />
-        ) : (
-          <>
-            <GlobalNavbar toggleDarkMode={() => setDarkMode(!darkMode)} />
-            {renderPage()}
-          </>
-        )}
+        ) : renderPage()}
       </main>
-      {globalStyle(darkMode)}
     </div>
   )
 }
 
 export async function getServerSideProps(context) {
+  let pageProps = {
+    props: {
+      isConnected: false,
+      user: null
+    }
+  };
   try {
     await clientPromise;
-    return {
-      props: {
-        isConnected: true
-      },
-    }
+    pageProps.props.isConnected = true;
   } catch (e) {
-    console.error(e)
-    return {
-      props: { isConnected: false },
-    }
+    console.error(e);
   }
+  try {
+    const session = await getSession(context);
+    if (session) pageProps.props.user = session.user;
+  } catch (e) {
+    console.error(e);
+  }
+  return pageProps;
 }

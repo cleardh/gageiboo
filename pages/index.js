@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import clientPromise from '../lib/mongodb';
 import axios from 'axios';
-import { Intent, Spinner } from '@blueprintjs/core';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import 'react-day-picker/lib/style.css';
 import '@blueprintjs/table/lib/css/table.css';
@@ -10,6 +9,7 @@ import colors from '../utils/colors';
 import GlobalNavbar from '../components/Navbar';
 import Form from '../components/Form';
 import globalStyle from '../utils/style';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function Home({ isConnected }) {
   const [darkMode, setDarkMode] = useState(true);
@@ -85,7 +85,7 @@ export default function Home({ isConnected }) {
 
       <main>
         {!isConnected || loadingData ? (
-          <Spinner intent={Intent.NONE} size={75} />
+          <LoadingSpinner />
         ) : (
           <>
             <GlobalNavbar toggleDarkMode={() => setDarkMode(!darkMode)} />

@@ -26,7 +26,7 @@ const GlobalNavbar = ({ toggleDarkMode }) => {
                 }
                 <Icon icon='contrast' size={IconSize.LARGE} onClick={toggleDarkMode} className='navbar-elements' />
             </Navbar.Group >
-        </Navbar >
+        </Navbar>
     )
 }
 

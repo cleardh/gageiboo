@@ -2,16 +2,29 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Navbar, Icon, IconSize, Alignment } from '@blueprintjs/core';
 
-const GlobalNavbar = ({ toggleDarkMode }) => {
+const GlobalNavbar = ({ darkMode, setDarkMode, user, signOut }) => {
     const [downloadActive, setDownloadActive] = useState(false);
     const activateDownload = () => {
         setDownloadActive(true);
         setTimeout(() => setDownloadActive(false), 300);
     }
+    if (!user) {
+        return (
+            <Navbar fixedToTop className='navbar'>
+                <Navbar.Group align={Alignment.RIGHT}>
+                    <Icon icon='insert' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='chart' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='th' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
+                </Navbar.Group >
+            </Navbar>
+        );
+    }
     return (
         <Navbar fixedToTop className='navbar'>
             <Navbar.Group align={Alignment.RIGHT}>
-                <Link href='/'><Icon icon='insert' size={IconSize.LARGE} className='navbar-elements' /></Link>
+                <Link href='/add'><Icon icon='insert' size={IconSize.LARGE} className='navbar-elements' /></Link>
                 <Link href='/chart'><Icon icon='chart' size={IconSize.LARGE} className='navbar-elements' /></Link>
                 <Link href='/raw'><Icon icon='th' size={IconSize.LARGE} className='navbar-elements' /></Link>
                 {downloadActive ? (
@@ -24,7 +37,8 @@ const GlobalNavbar = ({ toggleDarkMode }) => {
                     <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' onClick={activateDownload} />
                 )
                 }
-                <Icon icon='contrast' size={IconSize.LARGE} onClick={toggleDarkMode} className='navbar-elements' />
+                <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
+                <Icon icon='log-out' size={IconSize.LARGE} onClick={signOut} className='navbar-elements' />
             </Navbar.Group >
         </Navbar>
     )

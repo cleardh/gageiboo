@@ -49,7 +49,7 @@ const Form = ({ data, updateData, exit }) => {
     }
     const parseDate = dateStr => {
         const date = dateStr ? new Date(dateStr) : new Date();
-        const dateObj = new Date(`${date.getUTCFullYear()}-${(`0${date.getUTCMonth() + 1}`).slice(-2)}-${(`0${date.getUTCDate()}`).slice(-2)}T00:00:00`);
+        const dateObj = new Date(`${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}T00:00:00`);
         return dateObj;
     }
     const errorMessage = (err) => {
@@ -99,7 +99,7 @@ const Form = ({ data, updateData, exit }) => {
             return;
         }
         const dataToPost = {
-            날짜: `${formData.date.getFullYear()}-${(`0${formData.date.getMonth() + 1}`).slice(-2)}-${(`0${formData.date.getDate()}`).slice(-2)}`,
+            날짜: moment(formData.date).format('YYYY-MM-DD'),
             카테고리: formData.category,
             메모: formData.memo
         };
@@ -137,7 +137,7 @@ const Form = ({ data, updateData, exit }) => {
     }
     const showDeleteDataMessage = () => {
         deleteDataMessageTimeout = setTimeout(() => {
-            if (!doubleClick) setDeleteDataMessage('더블클릭으로 지워주세용.');
+            if (!doubleClick) setDeleteDataMessage('더블클릭으로 지워주세요.');
         }, 500);
     }
     return (

@@ -126,6 +126,7 @@ export default function Raw({ isConnected }) {
 export async function getServerSideProps(context) {
   let pageProps = {
     props: {
+      protected: true,
       isConnected: false,
       user: null
     }

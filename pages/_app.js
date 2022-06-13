@@ -8,7 +8,8 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
     const router = useRouter();
     const [darkMode, setDarkMode] = useState(true);
     useEffect(() => {
-        if (['Home', 'Error'].indexOf(Component.name) < 0 && !pageProps.user) router.push('/');
+        console.log(Component.name);
+        // if (['Home', 'Error'].indexOf(Component.name) < 0 && !pageProps.user) router.push('/');
     }, [Component]);
     return (
         <SessionProvider session={session}>

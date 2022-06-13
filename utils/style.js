@@ -56,6 +56,16 @@ const globalStyle = (darkMode) => {
           width: 100px;
           height: 100px;
           cursor: pointer;
+          animation: 5s infinite throb;
+        }
+        @keyframes throb {
+          0% { transform: scale(1); }
+          40% { transform: scale(1); }
+          45% { transform: scale(1.2); }
+          50% { transform: scale(1); }
+          55% { transform: scale(1.2); }
+          60% { transform: scale(1); }
+          100% { transform: scale(1); }
         }
         .button-signin:hover {
           filter: opacity(0.5);

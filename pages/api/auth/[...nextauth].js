@@ -30,7 +30,6 @@ export default NextAuth({
             if (user) token.user = { email: user.email };
             return token;
         },
-
         async session({ session, token }) {
             session.user = token.user;
             return session;

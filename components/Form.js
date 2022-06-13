@@ -36,6 +36,9 @@ const Form = ({ data, updateData, exit }) => {
         success: false
     });
     const [deleteDataMessage, setDeleteDataMessage] = useState('');
+    const keypress = (key) => {
+        if (key === 'Enter') postData();
+    }
     const resetForm = () => {
         setFormData({
             amount: '',
@@ -151,13 +154,13 @@ const Form = ({ data, updateData, exit }) => {
                 )}
             </Toaster>
             <FormGroup>
-                <div className='form-input-group'>
+                <div className='form-input-group' onKeyDown={(e) => keypress(e.code)}>
                     <Label htmlFor='amount' className='labels'>금액</Label>
                     <NumericInput id='amount' leftIcon='dollar' majorStepSize={10} minorStepSize={0.05}
                         onValueChange={(valueAsNumber, valueAsString) => setFormData({ ...formData, amount: valueAsString })} value={formData.amount}
                         buttonPosition='none' />
                 </div>
-                <div style={{ width: '100%' }}>
+                <div className='form-input-group' onKeyDown={(e) => keypress(e.code)} style={{ width: '100%' }}>
                     <RadioGroup
                         inline={true}
                         onChange={e => setFormData({ ...formData, transactionType: e.target.value })}
@@ -167,7 +170,7 @@ const Form = ({ data, updateData, exit }) => {
                         <Radio label='수입' value='수입' />
                     </RadioGroup>
                 </div>
-                <div className='form-input-group'>
+                <div className='form-input-group' onKeyDown={(e) => keypress(e.code)}>
                     <Label htmlFor='date' className='labels'>날짜</Label>
                     <DateInput id='date' leftIcon='dollar'
                         onChange={selectedDate => setFormData({ ...formData, date: selectedDate })}
@@ -175,7 +178,7 @@ const Form = ({ data, updateData, exit }) => {
                         formatDate={date => moment(date).format('YYYY-MM-DD')}
                         placeholder='YYYY-MM-DD' parseDate={str => parseDate(str)} showActionsBar={true} todayButtonText='Today' />
                 </div>
-                <div className='form-input-group'>
+                <div className='form-input-group' onKeyDown={(e) => keypress(e.code)}>
                     <Label htmlFor='location' className='labels'>카테고리</Label>
                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                         <HTMLSelect onChange={e => setFormData({ ...formData, category: e.target.value })} value={formData.category}>
@@ -185,7 +188,7 @@ const Form = ({ data, updateData, exit }) => {
                     </div>
                     <input type='text' className={Classes.INPUT} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value.toLowerCase() })} />
                 </div>
-                <div className='form-input-group'>
+                <div className='form-input-group' onKeyDown={(e) => keypress(e.code)}>
                     <Label htmlFor='memo' className='labels'>메모</Label>
                     <TextArea
                         id='memo'

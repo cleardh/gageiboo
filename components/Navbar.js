@@ -8,19 +8,19 @@ const GlobalNavbar = ({ darkMode, setDarkMode, user, signOut }) => {
         setDownloadActive(true);
         setTimeout(() => setDownloadActive(false), 300);
     }
-    // if (!user) {
-    //     return (
-    //         <Navbar fixedToTop className='navbar'>
-    //             <Navbar.Group align={Alignment.RIGHT}>
-    //                 <Icon icon='insert' size={IconSize.LARGE} className='navbar-elements' />
-    //                 <Icon icon='chart' size={IconSize.LARGE} className='navbar-elements' />
-    //                 <Icon icon='th' size={IconSize.LARGE} className='navbar-elements' />
-    //                 <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' />
-    //                 <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
-    //             </Navbar.Group >
-    //         </Navbar>
-    //     );
-    // }
+    if (!user) {
+        return (
+            <Navbar fixedToTop className='navbar'>
+                <Navbar.Group align={Alignment.RIGHT}>
+                    <Icon icon='insert' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='chart' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='th' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' />
+                    <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
+                </Navbar.Group >
+            </Navbar>
+        );
+    }
     return (
         <Navbar fixedToTop className='navbar'>
             <Navbar.Group align={Alignment.RIGHT}>
@@ -38,7 +38,7 @@ const GlobalNavbar = ({ darkMode, setDarkMode, user, signOut }) => {
                 )
                 }
                 <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
-                {/* <Icon icon='log-out' size={IconSize.LARGE} onClick={signOut} className='navbar-elements' /> */}
+                <Icon icon='log-out' size={IconSize.LARGE} onClick={signOut} className='navbar-elements' />
             </Navbar.Group >
         </Navbar>
     )

@@ -42,7 +42,7 @@ const SignIn = ({ callbackUrl }) => {
                             <InputGroup
                                 placeholder='이메일'
                                 leftIcon='envelope'
-                                type='text'
+                                type='email'
                                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                                 value={loginForm.email}
                             />

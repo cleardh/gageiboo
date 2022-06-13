@@ -13,7 +13,7 @@ export default function Home({ callbackUrl }) {
       </Head>
       <main>
         {/* <SignIn callbackUrl={callbackUrl} /> */}
-        <div className='button-signin' onClick={() => signIn('google', { callbackUrl: 'http://localhost:3005/add' })}>
+        <div className='button-signin' onClick={() => signIn('google', { callbackUrl })}>
           <svg
             data-name="Layer 1"
             id="Layer_1"

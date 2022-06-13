@@ -3,7 +3,7 @@ import Head from 'next/head';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import SignIn from '../components/SignIn';
 
-export default function Home() {
+export default function Home({ callbackUrl }) {
   return (
     <div className='container'>
       <Head>
@@ -11,8 +11,16 @@ export default function Home() {
         <link rel='icon' href='/favicon.ico' />
       </Head>
       <main>
-        <SignIn />
+        <SignIn callbackUrl={callbackUrl} />
       </main>
     </div>
   );
+}
+
+export async function getServerSideProps(context) {
+  return {
+    props: {
+      callbackUrl: `${process.env.NEXTAUTH_URL}/add`
+    }
+  };
 }

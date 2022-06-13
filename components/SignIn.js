@@ -4,7 +4,7 @@ import { signIn } from 'next-auth/react';
 import CryptoJs from 'crypto-js';
 import LoadingSpinner from './LoadingSpinner';
 
-const SignIn = () => {
+const SignIn = ({ callbackUrl }) => {
     const [loading, setLoading] = useState(false);
     const [loginForm, setLoginForm] = useState({
         email: '',
@@ -22,7 +22,7 @@ const SignIn = () => {
         const { email, password } = loginForm;
         const hash = CryptoJs.SHA256(password).toString();
         setTimeout(() => {
-            signIn('credentials', { email, password: hash, callbackUrl: 'http://localhost:3005/add' });
+            signIn('credentials', { email, password: hash, callbackUrl });
         }, 500);
     }
     return (

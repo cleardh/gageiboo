@@ -207,7 +207,7 @@ const Form = ({ data, updateData, exit }) => {
                         </Toaster>
                         <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />
                         <Button icon='trash' className='btn-submit' text='Delete' type='button' intent={Intent.DANGER} onClick={showDeleteDataMessage} onDoubleClick={deleteData} />
-                        <Button icon='reset' className='btn-submit' text='Cancel' type='button' intent={Intent.NONE} onClick={exit} />
+                        <Button icon='reset' className='btn-submit' text='Cancel' type='button' intent={Intent.NONE} onClick={() => exit(false)} />
                     </div>
                 ) : (
                     <Button icon='saved' className='btn-submit' text='Submit' type='button' intent={Intent.SUCCESS} onClick={postData} />

@@ -9,14 +9,13 @@ let doubleClick = false;
 const Form = ({ data, updateData, exit }) => {
     useEffect(() => {
         doubleClick = false;
-        resetForm();
         if (updateData) {
             const amount = updateData.지출 || updateData.수입;
             const date = parseDate(updateData.날짜);
             const category = updateData.카테고리;
             const transactionType = updateData.지출 ? '지출' : '수입';
             const memo = updateData.메모;
-            setFormData({
+            return setFormData({
                 ...formData,
                 amount,
                 date,
@@ -25,6 +24,7 @@ const Form = ({ data, updateData, exit }) => {
                 memo
             });
         }
+        resetForm();
     }, []);
     const [formData, setFormData] = useState({
         amount: '',
@@ -51,9 +51,8 @@ const Form = ({ data, updateData, exit }) => {
         });
     }
     const parseDate = dateStr => {
-        const date = dateStr ? new Date(dateStr) : new Date();
-        const dateObj = new Date(`${date.getFullYear()}-${(`0${date.getMonth() + 1}`).slice(-2)}-${(`0${date.getDate()}`).slice(-2)}T00:00:00`);
-        return dateObj;
+        const date = dateStr ? new Date(`${dateStr}T00:00:00`) : new Date();
+        return date;
     }
     const errorMessage = (err) => {
         switch (err) {

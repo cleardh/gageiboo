@@ -16,7 +16,7 @@ const dark = '#30404d';
 const bright = '#f5f5f5';
 export default function Chart({ isConnected, darkMode }) {
     const [data, setData] = useState(null);
-    const [viewMode, setViewMode] = useState('spreadsheet');
+    const [viewMode, setViewMode] = useState('chart');
     const [loadingData, setLoadingData] = useState(false);
     const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
     const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);

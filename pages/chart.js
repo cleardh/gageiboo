@@ -10,11 +10,13 @@ import '@blueprintjs/table/lib/css/table.css';
 import colors from '../utils/colors';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSession } from 'next-auth/react';
+import { Cell, Column, Table2 } from '@blueprintjs/table';
 
 const dark = '#30404d';
 const bright = '#f5f5f5';
 export default function Chart({ isConnected, darkMode }) {
     const [data, setData] = useState(null);
+    const [viewMode, setViewMode] = useState('spreadsheet');
     const [loadingData, setLoadingData] = useState(false);
     const [rememberExpenseFilters, setRememberExpenseFilters] = useState(null);
     const [rememberIncomeFilters, setRememberIncomeFilters] = useState(null);
@@ -266,6 +268,18 @@ export default function Chart({ isConnected, darkMode }) {
         });
         return total.toFixed(2);
     }
+    const viewModeSelection =
+        viewMode === 'chart' ? (
+            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', width: '100%', padding: 20, position: 'absolute', top: 50 }}>
+                <Button icon='chart' intent={Intent.NONE} onClick={() => setViewMode('chart')}>Chart view</Button>
+                <Button icon='th' intent={Intent.NONE} onClick={() => setViewMode('spreadsheet')}>Spreadsheet view</Button>
+            </div>
+        ) : (
+            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', width: '100%', padding: 20 }}>
+                <Button icon='chart' intent={Intent.NONE} onClick={() => setViewMode('chart')}>Chart view</Button>
+                <Button icon='th' intent={Intent.NONE} onClick={() => setViewMode('spreadsheet')}>Spreadsheet view</Button>
+            </div>
+        );
     const renderPage = () => {
         if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
             return (
@@ -281,11 +295,79 @@ export default function Chart({ isConnected, darkMode }) {
         const width = window.innerWidth * 0.8;
         const expenseHeight = (50 * expense.length) + 100;
         const incomeHeight = (50 * income.length) + 100;
+        if (viewMode !== 'chart') {
+            return (
+                <div className='spreadsheet' style={{ flexDirection: 'column', alignItems: 'center', background: '#f5f5f5', paddingTop: 50 }}>
+                    {viewModeSelection}
+                    {/* Spreadsheet view for Expense */}
+                    <div className='spreadsheet-chart-title'>지출</div>
+                    <Table2 numRows={expenseCategoriesToFilter.length + 1}
+                    // getCellClipboardData={(rowIndex, columnIndex) => {
+                    //     const dataToCopy = {
+                    //         날짜: data.raw[rowIndex].날짜,
+                    //         메모: data.raw[rowIndex].메모,
+                    //         카테고리: data.raw[rowIndex].카테고리,
+                    //         지출: data.raw[rowIndex].지출,
+                    //         수입: data.raw[rowIndex].수입
+                    //     };
+                    //     return dataToCopy[Object.keys(dataToCopy)[columnIndex]];
+                    // }}
+                    >
+                        <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
+                            <Cell>{expenseCategoriesToFilter[rowIndex]}</Cell>
+                        ) : (
+                            <Cell className='total-cell'>Total</Cell>
+                        )} />
+                        {expense.sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
+                            <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
+                                <Cell>{monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
+                            ) : (
+                                <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
+                                    if (curr === 'month') return total + 0;
+                                    return total + monthData[curr];
+                                }, 0).toFixed(2)}</Cell>
+                            )} />
+                        ))}
+                    </Table2>
+                    {/* Spreadsheet view for Income */}
+                    <div className='spreadsheet-chart-title'>수입</div>
+                    <Table2 numRows={incomeCategoriesToFilter.length + 1}
+                    // getCellClipboardData={(rowIndex, columnIndex) => {
+                    //     const dataToCopy = {
+                    //         날짜: data.raw[rowIndex].날짜,
+                    //         메모: data.raw[rowIndex].메모,
+                    //         카테고리: data.raw[rowIndex].카테고리,
+                    //         지출: data.raw[rowIndex].지출,
+                    //         수입: data.raw[rowIndex].수입
+                    //     };
+                    //     return dataToCopy[Object.keys(dataToCopy)[columnIndex]];
+                    // }}
+                    >
+                        <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < incomeCategoriesToFilter.length ? (
+                            <Cell>{incomeCategoriesToFilter[rowIndex]}</Cell>
+                        ) : (
+                            <Cell className='total-cell'>Total</Cell>
+                        )} />
+                        {income.sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
+                            <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < incomeCategoriesToFilter.length ? (
+                                <Cell>{monthData[incomeCategoriesToFilter[rowIndex]] ? monthData[incomeCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
+                            ) : (
+                                <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
+                                    if (curr === 'month') return total + 0;
+                                    return total + monthData[curr];
+                                }, 0).toFixed(2)}</Cell>
+                            )} />
+                        ))}
+                    </Table2>
+                </div>
+            );
+        }
         return (
-            <div className='chart-container' style={{ height: `${expenseHeight + incomeHeight + 400}px` }}>
+            <div className='chart-container' style={{ height: `${expenseHeight + incomeHeight + 450}px` }}>
                 <div className='back-to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                     <Icon icon='double-chevron-up' size={20}></Icon>
                 </div>
+                {viewModeSelection}
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
                     <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>

@@ -160,6 +160,20 @@ const globalStyle = (darkMode) => {
           justify-content: center;
           padding: 40px 0 0;
         }
+        .spreadsheet-chart-title {
+          font-size: 30px;
+          text-align: center;
+          letter-spacing: 5px;
+          width: 100%;
+          background: transparent;
+          color: #182026;
+          padding: 10px;
+        }
+        .total-cell {
+          background: #787878;
+          color: #f5f5f5;
+          font-weight: bold;
+        }
         .button-cell {
           display: flex;
           justify-content: center;

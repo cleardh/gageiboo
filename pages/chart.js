@@ -301,17 +301,14 @@ export default function Chart({ isConnected, darkMode }) {
                     {viewModeSelection}
                     {/* Spreadsheet view for Expense */}
                     <div className='spreadsheet-chart-title'>지출</div>
-                    <Table2 numRows={expenseCategoriesToFilter.length + 1}
-                    // getCellClipboardData={(rowIndex, columnIndex) => {
-                    //     const dataToCopy = {
-                    //         날짜: data.raw[rowIndex].날짜,
-                    //         메모: data.raw[rowIndex].메모,
-                    //         카테고리: data.raw[rowIndex].카테고리,
-                    //         지출: data.raw[rowIndex].지출,
-                    //         수입: data.raw[rowIndex].수입
-                    //     };
-                    //     return dataToCopy[Object.keys(dataToCopy)[columnIndex]];
-                    // }}
+                    <Table2 numRows={expenseCategoriesToFilter.length + 1} getCellClipboardData={(rowIndex, columnIndex) => {
+                        if (columnIndex === 0) return expenseCategoriesToFilter[rowIndex];
+                        const monthData = expense.sort((a, b) => new Date(a.month) - new Date(b.month))[columnIndex - 1];
+                        if (monthData) {
+                            return monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : 0;
+                        }
+                        return 0;
+                    }}
                     >
                         <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
                             <Cell>{expenseCategoriesToFilter[rowIndex]}</Cell>
@@ -331,17 +328,14 @@ export default function Chart({ isConnected, darkMode }) {
                     </Table2>
                     {/* Spreadsheet view for Income */}
                     <div className='spreadsheet-chart-title'>수입</div>
-                    <Table2 numRows={incomeCategoriesToFilter.length + 1}
-                    // getCellClipboardData={(rowIndex, columnIndex) => {
-                    //     const dataToCopy = {
-                    //         날짜: data.raw[rowIndex].날짜,
-                    //         메모: data.raw[rowIndex].메모,
-                    //         카테고리: data.raw[rowIndex].카테고리,
-                    //         지출: data.raw[rowIndex].지출,
-                    //         수입: data.raw[rowIndex].수입
-                    //     };
-                    //     return dataToCopy[Object.keys(dataToCopy)[columnIndex]];
-                    // }}
+                    <Table2 numRows={incomeCategoriesToFilter.length + 1} getCellClipboardData={(rowIndex, columnIndex) => {
+                        if (columnIndex === 0) return incomeCategoriesToFilter[rowIndex];
+                        const monthData = income.sort((a, b) => new Date(a.month) - new Date(b.month))[columnIndex - 1];
+                        if (monthData) {
+                            return monthData[incomeCategoriesToFilter[rowIndex]] ? monthData[incomeCategoriesToFilter[rowIndex]].toFixed(2) : 0;
+                        }
+                        return 0;
+                    }}
                     >
                         <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < incomeCategoriesToFilter.length ? (
                             <Cell>{incomeCategoriesToFilter[rowIndex]}</Cell>

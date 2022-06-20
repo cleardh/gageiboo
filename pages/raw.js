@@ -89,7 +89,16 @@ export default function Raw({ isConnected }) {
     }
     return (
       <div className='spreadsheet'>
-        <Table2 numRows={data.raw.length}>
+        <Table2 numRows={data.raw.length} getCellClipboardData={(rowIndex, columnIndex) => {
+          const dataToCopy = {
+            날짜: data.raw[rowIndex].날짜,
+            카테고리: data.raw[rowIndex].카테고리,
+            메모: data.raw[rowIndex].메모,
+            지출: data.raw[rowIndex].지출,
+            수입: data.raw[rowIndex].수입
+          };
+          return dataToCopy[Object.keys(dataToCopy)[columnIndex]];
+        }}>
           <Column name='날짜' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].날짜}</Cell>)} />
           <Column name='카테고리' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].카테고리}</Cell>)} />
           <Column name='메모' cellRenderer={(rowIndex) => (<Cell>{data.raw[rowIndex].메모}</Cell>)} />

@@ -248,7 +248,7 @@ export default function Chart({ isConnected, darkMode }) {
                     <rect
                         x={x}
                         y={y}
-                        width={5}
+                        width={3}
                         height={height}
                         stroke='none'
                         fill={darkMode ? dark : bright}
@@ -268,18 +268,6 @@ export default function Chart({ isConnected, darkMode }) {
         });
         return total.toFixed(2);
     }
-    const viewModeSelection =
-        viewMode === 'chart' ? (
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', width: '100%', padding: 20, position: 'absolute', top: 50 }}>
-                <Button icon='chart' intent={Intent.NONE} onClick={() => setViewMode('chart')}>Chart view</Button>
-                <Button icon='th' intent={Intent.NONE} onClick={() => setViewMode('spreadsheet')}>Spreadsheet view</Button>
-            </div>
-        ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', width: '100%', padding: 20 }}>
-                <Button icon='chart' intent={Intent.NONE} onClick={() => setViewMode('chart')}>Chart view</Button>
-                <Button icon='th' intent={Intent.NONE} onClick={() => setViewMode('spreadsheet')}>Spreadsheet view</Button>
-            </div>
-        );
     const renderPage = () => {
         if (!data || ((!data.expenseData || !data.expenseData.length) && (!data.incomeData || !data.incomeData.length))) {
             return (
@@ -295,79 +283,19 @@ export default function Chart({ isConnected, darkMode }) {
         const width = window.innerWidth * 0.8;
         const expenseHeight = (50 * expense.length) + 100;
         const incomeHeight = (50 * income.length) + 100;
-        if (viewMode !== 'chart') {
-            return (
-                <div className='spreadsheet' style={{ flexDirection: 'column', alignItems: 'center', background: '#f5f5f5', paddingTop: 50 }}>
-                    {viewModeSelection}
-                    {/* Spreadsheet view for Expense */}
-                    <div className='spreadsheet-chart-title'>지출</div>
-                    <Table2 numRows={expenseCategoriesToFilter.length + 1}
-                    // getCellClipboardData={(rowIndex, columnIndex) => {
-                    //     const dataToCopy = {
-                    //         날짜: data.raw[rowIndex].날짜,
-                    //         메모: data.raw[rowIndex].메모,
-                    //         카테고리: data.raw[rowIndex].카테고리,
-                    //         지출: data.raw[rowIndex].지출,
-                    //         수입: data.raw[rowIndex].수입
-                    //     };
-                    //     return dataToCopy[Object.keys(dataToCopy)[columnIndex]];
-                    // }}
-                    >
-                        <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
-                            <Cell>{expenseCategoriesToFilter[rowIndex]}</Cell>
-                        ) : (
-                            <Cell className='total-cell'>Total</Cell>
-                        )} />
-                        {expense.sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
-                            <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
-                                <Cell>{monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
-                            ) : (
-                                <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
-                                    if (curr === 'month') return total + 0;
-                                    return total + monthData[curr];
-                                }, 0).toFixed(2)}</Cell>
-                            )} />
-                        ))}
-                    </Table2>
-                    {/* Spreadsheet view for Income */}
-                    <div className='spreadsheet-chart-title'>수입</div>
-                    <Table2 numRows={incomeCategoriesToFilter.length + 1}
-                    // getCellClipboardData={(rowIndex, columnIndex) => {
-                    //     const dataToCopy = {
-                    //         날짜: data.raw[rowIndex].날짜,
-                    //         메모: data.raw[rowIndex].메모,
-                    //         카테고리: data.raw[rowIndex].카테고리,
-                    //         지출: data.raw[rowIndex].지출,
-                    //         수입: data.raw[rowIndex].수입
-                    //     };
-                    //     return dataToCopy[Object.keys(dataToCopy)[columnIndex]];
-                    // }}
-                    >
-                        <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < incomeCategoriesToFilter.length ? (
-                            <Cell>{incomeCategoriesToFilter[rowIndex]}</Cell>
-                        ) : (
-                            <Cell className='total-cell'>Total</Cell>
-                        )} />
-                        {income.sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
-                            <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < incomeCategoriesToFilter.length ? (
-                                <Cell>{monthData[incomeCategoriesToFilter[rowIndex]] ? monthData[incomeCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
-                            ) : (
-                                <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
-                                    if (curr === 'month') return total + 0;
-                                    return total + monthData[curr];
-                                }, 0).toFixed(2)}</Cell>
-                            )} />
-                        ))}
-                    </Table2>
-                </div>
-            );
-        }
         return (
             <div className='chart-container' style={{ height: `${expenseHeight + incomeHeight + 450}px` }}>
                 <div className='back-to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                     <Icon icon='double-chevron-up' size={20}></Icon>
                 </div>
-                {viewModeSelection}
+                <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', width: '100%', padding: 20, position: 'absolute', top: 50 }}>
+                    <div className='viewMode-indicator' style={{ borderColor: viewMode === 'chart' ? '#188050' : 'transparent' }}>
+                        <Button icon='chart' intent={Intent.NONE} large={true} className='round-button' onClick={() => setViewMode('chart')}></Button>
+                    </div>
+                    <div className='viewMode-indicator' style={{ borderColor: viewMode === 'chart' ? 'transparent' : '#188050' }}>
+                        <Button icon='th' intent={Intent.NONE} large={true} className='round-button' onClick={() => setViewMode('spreadsheet')}></Button>
+                    </div>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
                     <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>
@@ -411,28 +339,59 @@ export default function Chart({ isConnected, darkMode }) {
                         </div>
                     </div>
                 </Overlay>
-                <Recharts.BarChart
-                    width={width}
-                    height={expenseHeight}
-                    layout='vertical'
-                    data={expense}
-                    margin={{
-                        top: 20, right: 30, left: 20, bottom: 5,
-                    }}
-                >
-                    <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
-                    {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
-                    <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => (
-                        <>
-                            <span style={{ fontWeight: 'bold', display: 'block' }}>{label.split('-')[0]}/{label.split('-')[1]}</span>
-                            <span style={{ fontWeight: 'bold', display: 'block', margin: '10px 0' }}>Total: ${getTotal('expense', expense, label)}</span>
-                        </>
-                    )} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
-                    <Recharts.Legend iconType='circle' />
-                    {expenseCategoriesToFilter.map((category, i) => {
-                        return <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
-                    })}
-                </Recharts.BarChart>
+                {viewMode === 'chart' ? (
+                    <Recharts.BarChart
+                        id='expenseChart'
+                        width={width}
+                        height={expenseHeight}
+                        layout='vertical'
+                        data={expense}
+                        margin={{
+                            top: 20, right: 30, left: 20, bottom: 5,
+                        }}
+                    >
+                        <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
+                        {expense && expense.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
+                        <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => (
+                            <>
+                                <span style={{ fontWeight: 'bold', display: 'block' }}>{label.split('-')[0]}/{label.split('-')[1]}</span>
+                                <span style={{ fontWeight: 'bold', display: 'block', margin: '10px 0' }}>Total: ${getTotal('expense', expense, label)}</span>
+                            </>
+                        )} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright }} wrapperStyle={{ zIndex: 1000 }} />
+                        <Recharts.Legend iconType='circle' />
+                        {expenseCategoriesToFilter.map((category, i) => {
+                            return <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.expenseCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
+                        })}
+                    </Recharts.BarChart>
+                ) : (
+                    <div id='expenseSpreadsheet' style={{ overflow: 'scroll', width, marginTop: 20 }}>
+                        <Table2 numRows={expenseCategoriesToFilter.length + 1} getCellClipboardData={(rowIndex, columnIndex) => {
+                            if (columnIndex === 0) return expenseCategoriesToFilter[rowIndex];
+                            const monthData = new Array(...expense).sort((a, b) => new Date(a.month) - new Date(b.month))[columnIndex - 1];
+                            if (monthData) {
+                                return monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : 0;
+                            }
+                            return 0;
+                        }}
+                        >
+                            <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
+                                <Cell>{expenseCategoriesToFilter[rowIndex]}</Cell>
+                            ) : (
+                                <Cell className='total-cell'>Total</Cell>
+                            )} />
+                            {new Array(...expense).sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
+                                <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
+                                    <Cell>{monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
+                                ) : (
+                                    <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
+                                        if (curr === 'month' || data.expenseCategories.find(catObj => catObj.key === curr && !catObj.value)) return total + 0;
+                                        return total + monthData[curr];
+                                    }, 0).toFixed(2)}</Cell>
+                                )} />
+                            ))}
+                        </Table2>
+                    </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
                     <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
                     <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('income')}></Icon>
@@ -476,28 +435,58 @@ export default function Chart({ isConnected, darkMode }) {
                         </div>
                     </div>
                 </Overlay>
-                <Recharts.BarChart
-                    width={width}
-                    height={incomeHeight}
-                    layout='vertical'
-                    data={income}
-                    margin={{
-                        top: 20, right: 30, left: 20, bottom: 5,
-                    }}
-                >
-                    <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
-                    {income && income.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
-                    <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => (
-                        <>
-                            <span style={{ fontWeight: 'bold', display: 'block' }}>{label.split('-')[0]}/{label.split('-')[1]}</span>
-                            <span style={{ fontWeight: 'bold', display: 'block', margin: '10px 0' }}>Total: ${getTotal('income', income, label)}</span>
-                        </>
-                    )} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
-                    <Recharts.Legend iconType='circle' />
-                    {incomeCategoriesToFilter.map((category, i) => (
-                        <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.incomeCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
-                    ))}
-                </Recharts.BarChart>
+                {viewMode === 'chart' ? (
+                    <Recharts.BarChart
+                        id='incomeChart'
+                        width={width}
+                        height={incomeHeight}
+                        layout='vertical'
+                        data={income}
+                        margin={{
+                            top: 20, right: 30, left: 20, bottom: 5,
+                        }}
+                    >
+                        <Recharts.XAxis type='number' stroke={stroke} tickFormatter={(value, index) => `$${value}`} />
+                        {income && income.length && <Recharts.YAxis dataKey='month' type='category' axisLine={false} fontSize='12' stroke={stroke} tickFormatter={(value, index) => `${value.split('-')[0]}/${value.split('-')[1]}`} />}
+                        <Recharts.Tooltip formatter={(value, name, props) => `$${value.toFixed(2)}`} labelFormatter={(label) => (
+                            <>
+                                <span style={{ fontWeight: 'bold', display: 'block' }}>{label.split('-')[0]}/{label.split('-')[1]}</span>
+                                <span style={{ fontWeight: 'bold', display: 'block', margin: '10px 0' }}>Total: ${getTotal('income', income, label)}</span>
+                            </>
+                        )} labelStyle={{ color: bright }} contentStyle={{ background: dark, borderRadius: 10, borderColor: bright, zIndex: 1000 }} wrapperStyle={{ zIndex: 1000 }} />
+                        <Recharts.Legend iconType='circle' />
+                        {incomeCategoriesToFilter.map((category, i) => (
+                            <Recharts.Bar key={i} dataKey={category} layout='vertical' stackId='a' fill={data.incomeCategories.find(catObj => catObj.key === category).color} barSize={40} shape={CustomBarShape} />
+                        ))}
+                    </Recharts.BarChart>) : (
+                    <div id='incomeSpreadsheet' style={{ overflow: 'scroll', width, marginTop: 20 }}>
+                        <Table2 numRows={incomeCategoriesToFilter.length + 1} getCellClipboardData={(rowIndex, columnIndex) => {
+                            if (columnIndex === 0) return incomeCategoriesToFilter[rowIndex];
+                            const monthData = new Array(...income).sort((a, b) => new Date(a.month) - new Date(b.month))[columnIndex - 1];
+                            if (monthData) {
+                                return monthData[incomeCategoriesToFilter[rowIndex]] ? monthData[incomeCategoriesToFilter[rowIndex]].toFixed(2) : 0;
+                            }
+                            return 0;
+                        }}
+                        >
+                            <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < incomeCategoriesToFilter.length ? (
+                                <Cell>{incomeCategoriesToFilter[rowIndex]}</Cell>
+                            ) : (
+                                <Cell className='total-cell'>Total</Cell>
+                            )} />
+                            {new Array(...income).sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
+                                <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < incomeCategoriesToFilter.length ? (
+                                    <Cell>{monthData[incomeCategoriesToFilter[rowIndex]] ? monthData[incomeCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
+                                ) : (
+                                    <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
+                                        if (curr === 'month' || data.incomeCategories.find(catObj => catObj.key === curr && !catObj.value)) return total + 0;
+                                        return total + monthData[curr];
+                                    }, 0).toFixed(2)}</Cell>
+                                )} />
+                            ))}
+                        </Table2>
+                    </div>
+                )}
             </div>
         );
     }

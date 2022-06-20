@@ -169,6 +169,17 @@ const globalStyle = (darkMode) => {
           color: #182026;
           padding: 10px;
         }
+        .round-button {
+          border-radius: 50%;
+        }
+        .round-button:hover {
+          filter: opacity(0.5);
+        }
+        .viewMode-indicator {
+          padding: 5px;
+          border: 10px solid;
+          border-radius: 50%;
+        }
         .total-cell {
           background: #787878;
           color: #f5f5f5;

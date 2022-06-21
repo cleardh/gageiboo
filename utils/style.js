@@ -126,16 +126,57 @@ const globalStyle = (darkMode) => {
         }
         .overlay {
           width: 50%;
-          height: 50%;
+          height: 70%;
           position: fixed;
           left: 25%;
-          top: 25%;
+          top: 15%;
           color: #f5f5f5;
           border-radius: 10px;
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
+        }
+        .overlay-btn-container {
+          display: flex;
+          justify-content: space-evenly;
+          align-items: center;
+          width: 40%;
+          margin-top: 40px;
+        }
+        .overlay-select-container {
+          display: flex;
+          margin-bottom: 10px;
+        }
+        .overlay-select-buttons {
+          margin-left: 10px;
+        }
+        .overlay-checkboxes {
+          height: 85%;
+          overflow-y: scroll;
+          padding: 5px;
+        }
+        @media only screen and (max-width: 500px) {
+          .overlay {
+            width: 100%;
+            height: 80%;
+            left: 0;
+            top: 10%;
+          }
+          .overlay-btn-container {
+            width: 50%;
+          }
+          .overlay-select-container {
+            height: 25%;
+            flex-direction: column;
+          }
+          .overlay-select-buttons {
+            margin-left: 0;
+            margin-top: 10px;
+          }
+          .overlay-checkboxes {
+            height: 75%;
+          }
         }
         .back-to-top {
           position: sticky;

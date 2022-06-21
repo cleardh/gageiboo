@@ -214,6 +214,20 @@ export default function Chart({ isConnected, darkMode }) {
             }
         }
     }
+    const selectBookmarks = (type) => {
+        if (type === 'expense') {
+            setData({
+                ...data,
+                expenseCategories: data.expenseCategories.map(catObj => ({ ...catObj, value: true }))
+            });
+        }
+        if (type === 'income') {
+            setData({
+                ...data,
+                incomeCategories: data.incomeCategories.map(catObj => ({ ...catObj, value: true }))
+            });
+        }
+    }
     const cancelFilters = (type) => {
         if (type === 'expense') {
             setData({
@@ -300,17 +314,17 @@ export default function Chart({ isConnected, darkMode }) {
                     <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>지출</Label>
                     <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('expense')}></Icon>
                 </div>
-                <Overlay className='overlay' isOpen={displayExpenseFilter}>
+                <Overlay isOpen={displayExpenseFilter}>
                     <div className='overlay'>
                         <span style={{ fontSize: 25 }}>지출</span>
                         <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
                             <div style={{ width: '45%', height: '100%' }}>
                                 {/* months go here */}
-                                <div style={{ display: 'flex', marginBottom: 10 }}>
-                                    <Button text='Select all' onClick={() => selectAll('expense', 'months')} />
-                                    <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'months')} />
+                                <div className='overlay-select-container'>
+                                    <Button text='Select all' intent={Intent.PRIMARY} onClick={() => selectAll('expense', 'months')} />
+                                    <Button text='Deselect all' intent={Intent.WARNING} className='overlay-select-buttons' onClick={() => deSelectAll('expense', 'months')} />
                                 </div>
-                                <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                                <div className='overlay-checkboxes'>
                                     {data.expenseMonths.map((row, i) => (
                                         <Checkbox key={i} checked={row.value} label={row.key}
                                             onChange={() => updateFilter('expense', row.key, null)}
@@ -320,11 +334,12 @@ export default function Chart({ isConnected, darkMode }) {
                             </div>
                             <div style={{ width: '45%', height: '100%' }}>
                                 {/* categories go here */}
-                                <div style={{ display: 'flex', marginBottom: 10 }}>
-                                    <Button text='Select all' onClick={() => selectAll('expense', 'categories')} />
-                                    <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('expense', 'categories')} />
+                                <div className='overlay-select-container'>
+                                    <Button text='Select all' intent={Intent.PRIMARY} onClick={() => selectAll('expense', 'categories')} />
+                                    <Button icon='star' intent={Intent.NONE} className='overlay-select-buttons' onClick={() => selectBookmarks('expense')} />
+                                    <Button text='Deselect all' intent={Intent.WARNING} className='overlay-select-buttons' onClick={() => deSelectAll('expense', 'categories')} />
                                 </div>
-                                <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                                <div className='overlay-checkboxes'>
                                     {data.expenseCategories.map((row, i) => (
                                         <Checkbox key={i} checked={row.value} label={row.key}
                                             onChange={() => updateFilter('expense', null, row.key)}
@@ -333,7 +348,7 @@ export default function Chart({ isConnected, darkMode }) {
                                 </div>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
+                        <div className='overlay-btn-container'>
                             <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayExpenseFilter(false)} />
                             <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('expense')} />
                         </div>
@@ -396,17 +411,17 @@ export default function Chart({ isConnected, darkMode }) {
                     <Label style={{ fontSize: 30, textAlign: 'center', letterSpacing: 5, margin: 0 }}>수입</Label>
                     <Icon className='icon-filter' icon='filter' size={20} style={{ cursor: 'pointer', marginLeft: 10 }} onClick={() => openFilters('income')}></Icon>
                 </div>
-                <Overlay className='overlay' isOpen={displayIncomeFilter}>
+                <Overlay isOpen={displayIncomeFilter}>
                     <div className='overlay'>
                         <span style={{ fontSize: 25 }}>수입</span>
                         <div style={{ width: '80%', height: '60%', marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
                             <div style={{ width: '45%', height: '100%' }}>
                                 {/* months go here */}
-                                <div style={{ display: 'flex', marginBottom: 10 }}>
-                                    <Button text='Select all' onClick={() => selectAll('income', 'months')} />
-                                    <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'months')} />
+                                <div className='overlay-select-container'>
+                                    <Button text='Select all' intent={Intent.PRIMARY} onClick={() => selectAll('income', 'months')} />
+                                    <Button text='Deselect all' intent={Intent.WARNING} className='overlay-select-buttons' onClick={() => deSelectAll('income', 'months')} />
                                 </div>
-                                <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                                <div className='overlay-checkboxes'>
                                     {data.incomeMonths.map((row, i) => (
                                         <Checkbox key={i} checked={row.value} label={row.key}
                                             onChange={() => updateFilter('income', row.key, null)}
@@ -416,11 +431,12 @@ export default function Chart({ isConnected, darkMode }) {
                             </div>
                             <div style={{ width: '45%', height: '100%' }}>
                                 {/* categories go here */}
-                                <div style={{ display: 'flex', marginBottom: 10 }}>
-                                    <Button text='Select all' onClick={() => selectAll('income', 'categories')} />
-                                    <Button text='Deselect all' style={{ marginLeft: 10 }} onClick={() => deSelectAll('income', 'categories')} />
+                                <div className='overlay-select-container'>
+                                    <Button text='Select all' intent={Intent.PRIMARY} onClick={() => selectAll('income', 'categories')} />
+                                    <Button icon='star' intent={Intent.NONE} className='overlay-select-buttons' onClick={() => selectBookmarks('income')} />
+                                    <Button text='Deselect all' intent={Intent.WARNING} className='overlay-select-buttons' onClick={() => deSelectAll('income', 'categories')} />
                                 </div>
-                                <div style={{ height: '85%', overflowY: 'scroll', padding: 5 }}>
+                                <div className='overlay-checkboxes'>
                                     {data.incomeCategories.map((row, i) => (
                                         <Checkbox key={i} checked={row.value} label={row.key}
                                             onChange={() => updateFilter('income', null, row.key)}
@@ -429,7 +445,7 @@ export default function Chart({ isConnected, darkMode }) {
                                 </div>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'center', width: '40%', marginTop: 40 }}>
+                        <div className='overlay-btn-container'>
                             <Button icon='saved' text='Okay' type='button' intent={Intent.SUCCESS} onClick={() => setDisplayIncomeFilter(false)} />
                             <Button icon='cross' text='Cancel' type='button' intent={Intent.DANGER} onClick={() => cancelFilters('income')} />
                         </div>

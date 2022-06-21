@@ -167,7 +167,7 @@ const globalStyle = (darkMode) => {
             width: 50%;
           }
           .overlay-select-container {
-            height: 25%;
+            height: 30%;
             flex-direction: column;
           }
           .overlay-select-buttons {
@@ -175,7 +175,7 @@ const globalStyle = (darkMode) => {
             margin-top: 10px;
           }
           .overlay-checkboxes {
-            height: 75%;
+            height: 70%;
           }
         }
         .back-to-top {

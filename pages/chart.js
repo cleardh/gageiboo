@@ -14,6 +14,8 @@ import { Cell, Column, Table2 } from '@blueprintjs/table';
 
 const dark = '#30404d';
 const bright = '#f5f5f5';
+const highlightColor = '#19a464';
+const bookmarks = ['외식비', '식료품', '코스트코 식료품', 'Sobeys 식료품', '월마트 식료품', '갤러리아 한국마트 식료품', '아마존 식료품', '주류', '키치너 한국마트'];
 export default function Chart({ isConnected, darkMode }) {
     const [data, setData] = useState(null);
     const [viewMode, setViewMode] = useState('chart');
@@ -214,19 +216,11 @@ export default function Chart({ isConnected, darkMode }) {
             }
         }
     }
-    const selectBookmarks = (type) => {
-        if (type === 'expense') {
-            setData({
-                ...data,
-                expenseCategories: data.expenseCategories.map(catObj => ({ ...catObj, value: true }))
-            });
-        }
-        if (type === 'income') {
-            setData({
-                ...data,
-                incomeCategories: data.incomeCategories.map(catObj => ({ ...catObj, value: true }))
-            });
-        }
+    const selectBookmarks = () => {
+        setData({
+            ...data,
+            expenseCategories: data.expenseCategories.map(catObj => ({ ...catObj, value: bookmarks.indexOf(catObj.key) >= 0 }))
+        });
     }
     const cancelFilters = (type) => {
         if (type === 'expense') {
@@ -336,7 +330,7 @@ export default function Chart({ isConnected, darkMode }) {
                                 {/* categories go here */}
                                 <div className='overlay-select-container'>
                                     <Button text='Select all' intent={Intent.PRIMARY} onClick={() => selectAll('expense', 'categories')} />
-                                    <Button icon='star' intent={Intent.NONE} className='overlay-select-buttons' onClick={() => selectBookmarks('expense')} />
+                                    <Button icon='star' intent={Intent.NONE} className='overlay-select-buttons' onClick={selectBookmarks} />
                                     <Button text='Deselect all' intent={Intent.WARNING} className='overlay-select-buttons' onClick={() => deSelectAll('expense', 'categories')} />
                                 </div>
                                 <div className='overlay-checkboxes'>
@@ -380,7 +374,7 @@ export default function Chart({ isConnected, darkMode }) {
                     </Recharts.BarChart>
                 ) : (
                     <div id='expenseSpreadsheet' style={{ overflow: 'scroll', width, marginTop: 20 }}>
-                        <Table2 numRows={expenseCategoriesToFilter.length + 1} getCellClipboardData={(rowIndex, columnIndex) => {
+                        <Table2 numRows={expenseCategoriesToFilter.length + 2} getCellClipboardData={(rowIndex, columnIndex) => {
                             if (columnIndex === 0) return expenseCategoriesToFilter[rowIndex];
                             const monthData = new Array(...expense).sort((a, b) => new Date(a.month) - new Date(b.month))[columnIndex - 1];
                             if (monthData) {
@@ -390,16 +384,23 @@ export default function Chart({ isConnected, darkMode }) {
                         }}
                         >
                             <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
-                                <Cell>{expenseCategoriesToFilter[rowIndex]}</Cell>
-                            ) : (
+                                <Cell style={{ color: bookmarks.indexOf(expenseCategoriesToFilter[rowIndex]) >= 0 && highlightColor }}>{expenseCategoriesToFilter[rowIndex]}</Cell>
+                            ) : rowIndex === expenseCategoriesToFilter.length ? (
                                 <Cell className='total-cell'>Total</Cell>
+                            ) : (
+                                <Cell className='total-cell' style={{ background: highlightColor }}>식비 Total</Cell>
                             )} />
                             {new Array(...expense).sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
                                 <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
-                                    <Cell>{monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
-                                ) : (
+                                    <Cell style={{ color: bookmarks.indexOf(expenseCategoriesToFilter[rowIndex]) >= 0 && highlightColor }}>{monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
+                                ) : rowIndex === expenseCategoriesToFilter.length ? (
                                     <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
                                         if (curr === 'month' || data.expenseCategories.find(catObj => catObj.key === curr && !catObj.value)) return total + 0;
+                                        return total + monthData[curr];
+                                    }, 0).toFixed(2)}</Cell>
+                                ) : (
+                                    <Cell className='total-cell' style={{ background: highlightColor }}>{Object.keys(monthData).reduce((total, curr) => {
+                                        if (curr === 'month' || data.expenseCategories.find(catObj => catObj.key === curr && (!catObj.value || bookmarks.indexOf(catObj.key) < 0))) return total + 0;
                                         return total + monthData[curr];
                                     }, 0).toFixed(2)}</Cell>
                                 )} />
@@ -433,7 +434,6 @@ export default function Chart({ isConnected, darkMode }) {
                                 {/* categories go here */}
                                 <div className='overlay-select-container'>
                                     <Button text='Select all' intent={Intent.PRIMARY} onClick={() => selectAll('income', 'categories')} />
-                                    <Button icon='star' intent={Intent.NONE} className='overlay-select-buttons' onClick={() => selectBookmarks('income')} />
                                     <Button text='Deselect all' intent={Intent.WARNING} className='overlay-select-buttons' onClick={() => deSelectAll('income', 'categories')} />
                                 </div>
                                 <div className='overlay-checkboxes'>

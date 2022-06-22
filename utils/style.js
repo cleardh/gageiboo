@@ -176,6 +176,7 @@ const globalStyle = (darkMode) => {
           }
           .overlay-checkboxes {
             height: 70%;
+            margin-top: 20px;
           }
         }
         .back-to-top {

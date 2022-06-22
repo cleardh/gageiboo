@@ -14,8 +14,8 @@ import { Cell, Column, Table2 } from '@blueprintjs/table';
 
 const dark = '#30404d';
 const bright = '#f5f5f5';
-const highlightColor = '#19a464';
-const bookmarks = ['외식비', '식료품', '코스트코 식료품', 'Sobeys 식료품', '월마트 식료품', '갤러리아 한국마트 식료품', '아마존 식료품', '주류', '키치너 한국마트'];
+const highlightColor = '#eee';
+const bookmarks = ['외식비', '식료품', '코스트코 식료품', 'Sobeys 식료품', '월마트 식료품', '갤러리아 한국마트 식료품', '아마존 식료품', '주류', 'Zehrs 식료품', '키치너 한국마트'];
 export default function Chart({ isConnected, darkMode }) {
     const [data, setData] = useState(null);
     const [viewMode, setViewMode] = useState('chart');
@@ -384,22 +384,22 @@ export default function Chart({ isConnected, darkMode }) {
                         }}
                         >
                             <Column name='카테고리' cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
-                                <Cell style={{ color: bookmarks.indexOf(expenseCategoriesToFilter[rowIndex]) >= 0 && highlightColor }}>{expenseCategoriesToFilter[rowIndex]}</Cell>
+                                <Cell style={{ background: bookmarks.indexOf(expenseCategoriesToFilter[rowIndex]) >= 0 && highlightColor }}>{expenseCategoriesToFilter[rowIndex]}</Cell>
                             ) : rowIndex === expenseCategoriesToFilter.length ? (
                                 <Cell className='total-cell'>Total</Cell>
                             ) : (
-                                <Cell className='total-cell' style={{ background: highlightColor }}>식비 Total</Cell>
+                                <Cell className='total-cell' style={{ background: highlightColor, color: '#182026' }}>식비 Total</Cell>
                             )} />
                             {new Array(...expense).sort((a, b) => new Date(a.month) - new Date(b.month)).map(monthData => (
                                 <Column key={monthData.month} name={monthData.month} cellRenderer={(rowIndex) => rowIndex < expenseCategoriesToFilter.length ? (
-                                    <Cell style={{ color: bookmarks.indexOf(expenseCategoriesToFilter[rowIndex]) >= 0 && highlightColor }}>{monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
+                                    <Cell style={{ background: bookmarks.indexOf(expenseCategoriesToFilter[rowIndex]) >= 0 && highlightColor }}>{monthData[expenseCategoriesToFilter[rowIndex]] ? monthData[expenseCategoriesToFilter[rowIndex]].toFixed(2) : null}</Cell>
                                 ) : rowIndex === expenseCategoriesToFilter.length ? (
                                     <Cell className='total-cell'>{Object.keys(monthData).reduce((total, curr) => {
                                         if (curr === 'month' || data.expenseCategories.find(catObj => catObj.key === curr && !catObj.value)) return total + 0;
                                         return total + monthData[curr];
                                     }, 0).toFixed(2)}</Cell>
                                 ) : (
-                                    <Cell className='total-cell' style={{ background: highlightColor }}>{Object.keys(monthData).reduce((total, curr) => {
+                                    <Cell className='total-cell' style={{ background: highlightColor, color: '#182026' }}>{Object.keys(monthData).reduce((total, curr) => {
                                         if (curr === 'month' || data.expenseCategories.find(catObj => catObj.key === curr && (!catObj.value || bookmarks.indexOf(catObj.key) < 0))) return total + 0;
                                         return total + monthData[curr];
                                     }, 0).toFixed(2)}</Cell>

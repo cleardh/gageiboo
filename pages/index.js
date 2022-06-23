@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Head from 'next/head';
 import '@blueprintjs/core/lib/css/blueprint.css';
 import SignIn from '../components/SignIn';
 import { signIn } from 'next-auth/react';
 
 export default function Home({ authProvider, callbackUrl }) {
+  useEffect(() => {
+    const currentUrl = window.location.href;
+    if (currentUrl.split('://')[0] === 'http' && currentUrl.indexOf('localhost') < 0) {
+      window.location.href = `https://${currentUrl.split('://')[1]}`;
+    }
+  }, []);
   return (
     <div className='container'>
       <Head>

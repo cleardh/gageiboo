@@ -152,7 +152,7 @@ const Form = ({ data, updateData, exit }) => {
                     <Toast intent={Intent.SUCCESS} message='입력완료!' icon='tick-circle' onDismiss={resetForm} timeout={3000} />
                 )}
             </Toaster>
-            <FormGroup>
+            <FormGroup style={{ transform: typeof window !== 'undefined' && window.outerWidth > 600 ? 'scale(1.2)' : 'scale(1)' }}>
                 <div className='form-input-group' onKeyDown={(e) => keypress(e.code)}>
                     <Label htmlFor='amount' className='labels'>금액</Label>
                     <NumericInput id='amount' leftIcon='dollar' majorStepSize={10} minorStepSize={0.05}

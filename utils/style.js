@@ -124,6 +124,9 @@ const globalStyle = (darkMode) => {
             transform: translate3d(4px, 0, 0);
           }
         }
+        .bp3-overlay-backdrop {
+          background-color: rgba(16, 22, 26, 0.9);
+        }
         .overlay {
           width: 50%;
           height: 70%;
@@ -187,7 +190,7 @@ const globalStyle = (darkMode) => {
           border-radius: 50%;
           padding: 3px;
           cursor: pointer;
-          z-index: 1000000;
+          z-index: 20;
         }
         .back-to-top:hover {
           filter: opacity(0.5);

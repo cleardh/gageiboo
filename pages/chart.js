@@ -293,7 +293,7 @@ export default function Chart({ isConnected, darkMode }) {
         const incomeHeight = (50 * income.length) + 100;
         return (
             <div className='chart-container' style={{ height: `${expenseHeight + incomeHeight + 450}px` }}>
-                <div className='back-to-top' style={{ display: displayExpenseFilter || displayIncomeFilter ? 'none' : '' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <div className='back-to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                     <Icon icon='double-chevron-up' size={20}></Icon>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', width: '100%', padding: 20, position: 'absolute', top: 50 }}>

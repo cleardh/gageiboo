@@ -13,6 +13,7 @@ jobs:
             node-version: 18.6.0
       - run: npm install
       - run: echo MONGODB_URI=${{ secrets.MONGODB_URI }}
+      - run: touch .env.local
       - run: echo -e MONGODB_URI=${{ secrets.MONGODB_URI }} > .env.local
       - run: ls -lh
       - run: npm run build

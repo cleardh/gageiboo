@@ -2,6 +2,15 @@ name: CI/CD Pipelines
 on:
     push:
         branches: [ main ]
+env:
+  MONGODB_URI: ${{ secrets.MONGODB_URI }}
+  DB_ENV: ${{ secrets.DB_ENV }}
+  NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  AUTH_PROVIDER: ${{ secrets.AUTH_PROVIDER }}
+  CREDENTIALS: ${{ secrets.CREDENTIALS }}
+  GOOGLE_ID: ${{ secrets.GOOGLE_ID }}
+  GOOGLE_SECRET: ${{ secrets.GOOGLE_SECRET }}
 jobs:
   CI:
     runs-on: Ubuntu-20.04
@@ -12,10 +21,6 @@ jobs:
         with:
             node-version: 18.6.0
       - run: npm install
-      - run: echo MONGODB_URI=${{ secrets.MONGODB_URI }}
-      - run: touch .env.local
-      - run: echo -e MONGODB_URI=${{ secrets.MONGODB_URI }} > .env.local
-      - run: ls -lh
       - run: npm run build
   CD:
     runs-on: Ubuntu-20.04
@@ -35,8 +40,6 @@ jobs:
       # Install project dependencies and build
       - name: Install dependencies
         run: npm install
-      - name: Set up env
-        run: echo -e MONGODB_URI=${{ secrets.MONGODB_URI }}\nDB_ENV=${{ secrets.DB_ENV }}\nNEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}\nJWT_SECRET=${{ secrets.JWT_SECRET }}\nAUTH_PROVIDER=${{ secrets.AUTH_PROVIDER }}\nCREDENTIALS=${{ secrets.CREDENTIALS }}\nGOOGLE_ID=${{ secrets.GOOGLE_ID }}\nGOOGLE_SECRET=${{ secrets.GOOGLE_SECRET }} > .env.local
       - name: Run build
         run: npm run build
       - name: Configure AWS credentials

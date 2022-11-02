@@ -16,7 +16,7 @@ const dark = '#30404d';
 const bright = '#f5f5f5';
 const highlightColor = '#eee';
 const bookmarks = ['외식비', '식료품', '코스트코 식료품', 'Sobeys 식료품', '월마트 식료품', '갤러리아 한국마트 식료품', '아마존 식료품', '주류', 'Zehrs 식료품', '키치너 한국마트'];
-export default function Chart({ isConnected, darkMode }) {
+export default function Chart({ isConnected, darkMode, user }) {
     const [data, setData] = useState(null);
     const [viewMode, setViewMode] = useState('chart');
     const [loadingData, setLoadingData] = useState(false);
@@ -31,7 +31,7 @@ export default function Chart({ isConnected, darkMode }) {
     const getDataFromDatabase = async () => {
         try {
             setLoadingData(true);
-            const transactions = await axios.get('/api/transactions');
+            const transactions = await axios.get('/api/transactions', { headers: { 'user': user.email } });
             setLoadingData(false);
             transactions.data.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']));
             parseData(transactions.data);

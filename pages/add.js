@@ -10,7 +10,7 @@ import Form from '../components/Form';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSession } from 'next-auth/react';
 
-export default function Add({ isConnected }) {
+export default function Add({ isConnected, user }) {
     const [data, setData] = useState(null);
     const [loadingData, setLoadingData] = useState(false);
     useEffect(() => {
@@ -20,7 +20,7 @@ export default function Add({ isConnected }) {
     const getDataFromDatabase = async () => {
         try {
             setLoadingData(true);
-            const transactions = await axios.get('/api/transactions');
+            const transactions = await axios.get('/api/transactions', { headers: { 'user': user.email } });
             setLoadingData(false);
             transactions.data.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']));
             parseData(transactions.data);
@@ -72,7 +72,7 @@ export default function Add({ isConnected }) {
         });
     }
     const renderPage = () => {
-        return <Form data={data} />
+        return <Form data={data} user={user} />
     }
     return (
         <div className='container'>

@@ -12,7 +12,7 @@ import Form from '../components/Form';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSession } from 'next-auth/react';
 
-export default function Raw({ isConnected }) {
+export default function Raw({ isConnected, user }) {
   const [data, setData] = useState(null);
   const [loadingData, setLoadingData] = useState(false);
   const [updateRowIndex, setUpdateRowIndex] = useState(-1);
@@ -23,7 +23,7 @@ export default function Raw({ isConnected }) {
   const getDataFromDatabase = async () => {
     try {
       setLoadingData(true);
-      const transactions = await axios.get('/api/transactions');
+      const transactions = await axios.get('/api/transactions', { headers: { 'user': user.email } });
       setLoadingData(false);
       transactions.data.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']));
       parseData(transactions.data);
@@ -110,7 +110,7 @@ export default function Raw({ isConnected }) {
         </Table2>
         <Overlay className='overlay' isOpen={updateRowIndex >= 0}>
           <div className='overlay'>
-            <Form data={data} updateData={data.raw[updateRowIndex]} exit={(updated) => exitFromUpdateModal(updated)} />
+            <Form data={data} updateData={data.raw[updateRowIndex]} exit={(updated) => exitFromUpdateModal(updated)} user={user} />
           </div>
         </Overlay>
       </div >

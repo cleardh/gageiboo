@@ -3,11 +3,13 @@ import clientPromise from '../../../lib/mongodb';
 import fs from 'fs';
 import path from 'path';
 import XLSX from 'xlsx';
-const collection = process.env.DB_ENV === 'staging' ? 'transactions-staging' : 'transactions';
+let collection = process.env.DB_ENV === 'staging' ? 'transactions-staging' : 'transactions';
 
 export default async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db('gageiboo');
+    const user = req.headers['user'];
+    if (collection.indexOf(user) < 0) collection += `-${user}`;
     switch (req.method) {
         case 'POST':
             try {

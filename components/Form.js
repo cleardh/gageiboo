@@ -6,7 +6,7 @@ import moment from 'moment';
 
 let deleteDataMessageTimeout;
 let doubleClick = false;
-const Form = ({ data, updateData, exit }) => {
+const Form = ({ data, updateData, exit, user }) => {
     useEffect(() => {
         doubleClick = false;
         if (updateData) {
@@ -114,11 +114,11 @@ const Form = ({ data, updateData, exit }) => {
             try {
                 if (updateData) {
                     const dataToUpdate = { _id: updateData._id, ...dataToPost };
-                    await axios.put('/api/transactions', dataToUpdate);
+                    await axios.put('/api/transactions', dataToUpdate, { headers: { 'user': user.email } });
                     exit(true);
                     return;
                 }
-                await axios.post('/api/transactions', dataToPost);
+                await axios.post('/api/transactions', dataToPost, { headers: { 'user': user.email } });
                 setFormData({
                     ...formData,
                     success: true
@@ -134,7 +134,7 @@ const Form = ({ data, updateData, exit }) => {
             clearTimeout(deleteDataMessageTimeout);
             setDeleteDataMessage('');
         }
-        await axios.delete('/api/transactions', { data: { _id: updateData._id } });
+        await axios.delete('/api/transactions', { data: { _id: updateData._id } }, { headers: { 'user': user.email } });
         exit(true);
     }
     const showDeleteDataMessage = () => {

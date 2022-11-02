@@ -18,7 +18,7 @@ if (authProvider === 'google') {
                     email: u.split(',')[0],
                     password: u.split(',')[1],
                 }));
-                if (account.provider === 'google' && auth_users.findIndex(u => profile.email === u.email) >= 0) {
+                if (account.provider === 'google') {
                     return true;
                 }
                 return false;

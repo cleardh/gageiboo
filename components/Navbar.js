@@ -11,7 +11,7 @@ const GlobalNavbar = ({ darkMode, setDarkMode, user, signOut }) => {
                     <Icon icon='insert' size={IconSize.LARGE} className='navbar-elements' />
                     <Icon icon='chart' size={IconSize.LARGE} className='navbar-elements' />
                     <Icon icon='th' size={IconSize.LARGE} className='navbar-elements' />
-                    <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' />
+                    {/* <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' /> */}
                     <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
                 </Navbar.Group >
             </Navbar>
@@ -19,7 +19,7 @@ const GlobalNavbar = ({ darkMode, setDarkMode, user, signOut }) => {
     }
     return (
         <Navbar fixedToTop className='navbar'>
-            <Overlay isOpen={downloadActive}>
+            {/* <Overlay isOpen={downloadActive}>
                 <div className='overlay'>
                     <span style={{ fontSize: 25 }}>다운로드 하시겠습니까?</span>
                     <div className='overlay-btn-container' style={{ transform: 'scale(1.5)', flexDirection: 'column', marginTop: 60 }}>
@@ -31,12 +31,12 @@ const GlobalNavbar = ({ darkMode, setDarkMode, user, signOut }) => {
                         <Button icon='cross' intent={Intent.DANGER} text='Cancel' style={{ width: 150, marginTop: 10 }} onClick={() => setDownloadActive(false)} />
                     </div>
                 </div>
-            </Overlay>
+            </Overlay> */}
             <Navbar.Group align={Alignment.RIGHT}>
                 <Link href='/add'><Icon icon='insert' size={IconSize.LARGE} className='navbar-elements' /></Link>
                 <Link href='/chart'><Icon icon='chart' size={IconSize.LARGE} className='navbar-elements' /></Link>
                 <Link href='/raw'><Icon icon='th' size={IconSize.LARGE} className='navbar-elements' /></Link>
-                <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' onClick={() => setDownloadActive(true)} />
+                {/* <Icon icon='download' size={IconSize.LARGE} className='navbar-elements' onClick={() => setDownloadActive(true)} /> */}
                 <Icon icon='contrast' size={IconSize.LARGE} onClick={() => setDarkMode(!darkMode)} className='navbar-elements' />
                 <Icon icon='log-out' size={IconSize.LARGE} onClick={signOut} className='navbar-elements' />
             </Navbar.Group >

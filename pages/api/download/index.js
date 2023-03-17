@@ -1,11 +1,10 @@
-import path from 'path';
 import fs from 'fs';
 
 export default async function handler(req, res) {
     switch (req.method) {
         case 'GET':
             try {
-                const backupPath = path.join(__dirname, '/tmp/gageiboo_backup.xlsx');
+                const backupPath = '/tmp/gageiboo_backup.xlsx';
                 if (!fs.existsSync(backupPath)) return res.send('Not found');
                 const stat = fs.statSync(backupPath);
                 res.writeHead(200, {

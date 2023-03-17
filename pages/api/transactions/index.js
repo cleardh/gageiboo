@@ -1,7 +1,6 @@
 import { ObjectId } from 'mongodb';
 import clientPromise from '../../../lib/mongodb';
 import fs from 'fs';
-import path from 'path';
 import XLSX from 'xlsx';
 let collection = process.env.DB_ENV === 'staging' ? 'transactions-staging' : 'transactions';
 
@@ -57,7 +56,7 @@ export default async function handler(req, res) {
 }
 
 function backup(body) {
-    const backupPath = path.join(__dirname, '/tmp/gageiboo_backup.xlsx');
+    const backupPath = '/tmp/gageiboo_backup.xlsx';
     const wb = XLSX.utils.book_new();
     wb.Props = {
         Title: '가계부_백업',

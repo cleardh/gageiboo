@@ -114,11 +114,11 @@ const Form = ({ data, updateData, exit, user }) => {
             try {
                 if (updateData) {
                     const dataToUpdate = { _id: updateData._id, ...dataToPost };
-                    await axios.put('/api/transactions', dataToUpdate, { headers: { 'user': user.email } });
+                    await axios.put('/api/transactions', dataToUpdate);
                     exit(true);
                     return;
                 }
-                await axios.post('/api/transactions', dataToPost, { headers: { 'user': user.email } });
+                await axios.post('/api/transactions', dataToPost);
                 setFormData({
                     ...formData,
                     success: true
@@ -134,7 +134,7 @@ const Form = ({ data, updateData, exit, user }) => {
             clearTimeout(deleteDataMessageTimeout);
             setDeleteDataMessage('');
         }
-        await axios.delete('/api/transactions', { data: { _id: updateData._id } }, { headers: { 'user': user.email } });
+        await axios.delete('/api/transactions', { data: { _id: updateData._id } });
         exit(true);
     }
     const showDeleteDataMessage = () => {

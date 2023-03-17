@@ -20,7 +20,7 @@ export default function Add({ isConnected, user }) {
     const getDataFromDatabase = async () => {
         try {
             setLoadingData(true);
-            const transactions = await axios.get('/api/transactions', { headers: { 'user': user.email } });
+            const transactions = await axios.get('/api/transactions');
             setLoadingData(false);
             transactions.data.sort((a, b) => new Date(b['날짜']) - new Date(a['날짜']));
             parseData(transactions.data);

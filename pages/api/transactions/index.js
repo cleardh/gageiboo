@@ -57,7 +57,7 @@ export default async function handler(req, res) {
 }
 
 function backup(body) {
-    const backupPath = path.join(__dirname, '../../../../gageiboo_backup.xlsx');
+    const backupPath = path.join(__dirname, '/tmp/gageiboo_backup.xlsx');
     const wb = XLSX.utils.book_new();
     wb.Props = {
         Title: '가계부_백업',
